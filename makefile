@@ -21,6 +21,25 @@ MAX_REG_COUNT_SM11 := 0
 # To compile 32-bit binaries on a 64-bit machine, set this to 1.
 COMPILE_32 := 0
 
+#####################################################################
+# Get safeprimes if it does not exist
+#####################################################################
+download:
+ifeq (,$(wildcard ./cutil-linux))
+	mkdir cutil-linux
+	curl https://raw.githubusercontent.com/ominux/gpumcml/master/gpumcml/fast/cutil-linux/cutil.h -o ./cutil-linux/cutil.h;
+	curl https://raw.githubusercontent.com/ominux/gpumcml/master/gpumcml/fast/cutil-linux/libcutil_i386.a -o ./cutil-linux/libcutil_i386.a;
+	curl https://raw.githubusercontent.com/ominux/gpumcml/master/gpumcml/fast/cutil-linux/libcutil_x86_64.a -o ./cutil-linux/libcutil_x86_64.a;
+	curl https://raw.githubusercontent.com/ominux/gpumcml/master/gpumcml/fast/cutil-linux/multithreading.h -o ./cutil-linux/multithreading.h;
+endif
+ifeq (,$(wildcard ./executable))
+	mkdir executable;
+endif
+ifeq (,$(wildcard ./executable/safeprimes_base32.txt))
+	echo curl https://raw.githubusercontent.com/ominux/gpumcml/master/gpumcml/fast/executable/safeprimes_base32.txt;
+	curl https://raw.githubusercontent.com/ominux/gpumcml/master/gpumcml/fast/executable/safeprimes_base32.txt -o ./executable/safeprimes_base32.txt;
+endif
+
 ######################################################################
 # Compiler flags
 ######################################################################
@@ -95,7 +114,6 @@ CU_SRCS := $(PROG_BASE)_main.cu \
 ######################################################################
 # GPU code compilation rules for Compute Capability 2.0
 ######################################################################
-
 GENCODE_SM20 := -gencode arch=compute_35,code=\"sm_35,compute_35\"
 NVCC_FLAGS_SM20 := $(NVCC_FLAGS) $(GENCODE_SM20) -D__CUDA_ARCH__=200
 ifneq "$(strip $(MAX_REG_COUNT_SM20))" "0"
@@ -171,7 +189,6 @@ $(PROG_SM11).cu_o: $(CU_SRCS)
 
 clean_sm_11:
 	-$(NVCC) $(NVCC_FLAGS_SM11) -o $(PROG_SM11).cu_o -c $(PROG_BASE)_main.cu -clean
-
 ######################################################################
 # C code compilation rules
 ######################################################################

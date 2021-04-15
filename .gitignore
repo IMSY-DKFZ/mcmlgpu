@@ -1,0 +1,10 @@
+*.sm_*
+*.ii
+*.cudafe1.*
+*.fatbin*
+*.idea
+*.module_id
+*.ptx
+*.o
+cutil-linux
+executable
