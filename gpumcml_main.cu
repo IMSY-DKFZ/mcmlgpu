@@ -337,7 +337,7 @@ static double DoOneSimulation(int sim_id, SimulationStruct* simulation,
     // TODO: create class to store results and write them only at the end of all simulations
     // could create a method within a class called registerSimulationResult
     //Write_Simulation_Results(hss0, simulation, elapsedTime, mcoFile);
-    simResults->registerSimulationResults(hss0, simulation)
+    simResults->registerSimulationResults(hss0, simulation);
   }
 
   CUT_SAFE_CALL( cutDeleteTimer(execTimer) );
@@ -481,7 +481,7 @@ int main(int argc, char* argv[])
     elapsedTime = DoOneSimulation(i, &simulations[i], hstates, num_GPUs, x, a, mcoFile, &simResults);
     printProgress(i / float(n_simulations), elapsedTime);
   }
-  simResults.writeSimulationResults(mcoFile)
+  simResults.writeSimulationResults(mcoFile);
   // Free host thread states.
   for (i = 0; i < num_GPUs; ++i) free(hstates[i]);
 

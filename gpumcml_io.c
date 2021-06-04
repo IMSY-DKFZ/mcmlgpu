@@ -494,8 +494,8 @@ void SimulationResults::registerSimulationResults(SimState* HostMem, SimulationS
         }
 
     }
-    this->resultsStream << sim->outp_filename << "," << 1.0F - sim->start_weight) << "," << (double)Rd/scale1 << ",";
-    this->resultsStream << (double)A/scale1 << "," << (double)T/scale1) << ","  << (double)penetrationDepth << "\n";
+    this->resultsStream << sim->outp_filename << "," << 1.0F - sim->start_weight << "," << (double)Rd/scale1 << ",";
+    this->resultsStream << (double)A/scale1 << "," << (double)T/scale1 << ","  << (double)penetrationDepth << "\n";
     // the simulation id
     //fprintf(pFile_outp, sim->outp_filename);
     //fprintf(pFile_outp, ",");
