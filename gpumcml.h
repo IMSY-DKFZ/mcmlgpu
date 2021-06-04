@@ -93,6 +93,10 @@ typedef double GFLOAT;
 
 #define STR_LEN 200
 
+#include <iostream>
+#include <sstream>
+
+
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
 
@@ -206,5 +210,15 @@ extern int Write_Simulation_Results(SimState* HostMem,
 extern void FreeSimulationStruct(SimulationStruct* sim, int n_simulations);
 
 void printProgress (double percentage, double elapsedTime);
+
+//////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+
+class SimulationResults{
+public:
+    std::stringstream resultsStream;
+    void registerSimulationResults(SimState* HostMem, SimulationStruct* sim);
+    void writeSimulationResults(char* mcoFile);
+};
 
 #endif  // _GPUMCML_H_

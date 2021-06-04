@@ -146,11 +146,8 @@ void WriteInParm(FILE *file, SimulationStruct * sim)
 //////////////////////////////////////////////////////////////////////////////
 int Write_Simulation_Results(SimState* HostMem, SimulationStruct* sim,
     float simulation_time, char* mcoFile)
-  // simulation time in milliseconds
 {
-  //FILE* pFile_inp;
   FILE* pFile_outp;
-  //char mystring[STR_LEN];
 
   int na=sim->det.na;			// Number of grid elements in angular-direction [-]
   int nr=sim->det.nr;			// Number of grid elements in r-direction
@@ -168,7 +165,7 @@ int Write_Simulation_Results(SimState* HostMem, SimulationStruct* sim,
   unsigned long long Rd=0;	// Diffuse reflectance [-]
   unsigned long long A=0;		// Absorbed fraction [-]
   unsigned long long T=0;		// Transmittance [-]
-  double penentrationDepth = 0;
+  double penetrationDepth = 0;
   double beamIntensityAtPenetrationDepth = 0;
   unsigned long long weightPenetration = 0;
 
@@ -194,14 +191,14 @@ int Write_Simulation_Results(SimState* HostMem, SimulationStruct* sim,
     weightPenetration += HostMem->A_rz[i];
     if (weightPenetration > beamIntensityAtPenetrationDepth)
     {
-      penentrationDepth = (1. + i/nr) * dz; // gets penetration depth in cm
+      penetrationDepth = (1. + i/nr) * dz; // gets penetration depth in cm
       break;
     }
     else if (i == rz_size - 1 && weightPenetration > 0.)
     {
       // when the beam has gone through the whole layered tissue but there is a lot of transmission such that the intensity of the beam does not
       // reduce to I/e within the tissue, the penetration depth has to be the whole tickness of the tissue model
-      penentrationDepth = tissueDept;
+      penetrationDepth = tissueDept;
       break;
     }
 
@@ -215,7 +212,7 @@ int Write_Simulation_Results(SimState* HostMem, SimulationStruct* sim,
   fprintf(pFile_outp,"%G,",(double)Rd/scale1);
   fprintf(pFile_outp,"%G,",(double)A/scale1);
   fprintf(pFile_outp,"%G,",(double)T/scale1);
-  fprintf(pFile_outp, "%f\n",(double)penentrationDepth);
+  fprintf(pFile_outp, "%f\n",(double)penetrationDepth);
 
 
   fclose(pFile_outp);
@@ -444,4 +441,78 @@ void printProgress (double percentage, double elapsedTime)
     int rpad = PBWIDTH - lpad;
     printf ("\r%3.2f ms %3d%% [%.*s%*s]", elapsedTime, val, lpad, PBSTR, rpad, "");
     fflush (stdout);
+}
+
+//////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+
+void SimulationResults::registerSimulationResults(SimState* HostMem, SimulationStruct* sim){
+    int na=sim->det.na;			// Number of grid elements in angular-direction [-]
+    int nr=sim->det.nr;			// Number of grid elements in r-direction
+    int nz=sim->det.nz;			// Number of grid elements in z-direction
+    float dz = sim->det.dz;
+    float tissueDept = 0;
+
+    int rz_size = nr*nz;
+    int ra_size = nr*na;
+    int i;
+
+    double scale1 = (double)(WEIGHT_SCALE)*(double)sim->number_of_photons;
+
+    // Calculate and write RAT
+    unsigned long long Rd=0;	// Diffuse reflectance [-]
+    unsigned long long A=0;		// Absorbed fraction [-]
+    unsigned long long T=0;		// Transmittance [-]
+    double penetrationDepth = 0;
+    double beamIntensityAtPenetrationDepth = 0;
+    unsigned long long weightPenetration = 0;
+
+    for(i=0;i<rz_size;i++)A+= HostMem->A_rz[i];
+    for(i=0;i<ra_size;i++){T += HostMem->Tt_ra[i];Rd += HostMem->Rd_ra[i];}
+
+    // get tissue depth, it can be less than dimensions of grid. Layer number 0 has depth 0, only used for specular reflections
+    tissueDept = sim->layers[sim->n_layers].z_max;
+
+    // get penetration depth, ignore Rd because models with high reflectance would make the estimation of
+    // penetration depth break. This overestimates the penetration depth because in general photons that are absorbed
+    // travel dipper into the tissue
+    beamIntensityAtPenetrationDepth = (A + T) * (1. - 1. / EULER);
+    for(i=0; i<rz_size;i++)
+    {
+        weightPenetration += HostMem->A_rz[i];
+        if (weightPenetration > beamIntensityAtPenetrationDepth)
+        {
+            penetrationDepth = (1. + i/nr) * dz; // gets penetration depth in cm
+            break;
+        }
+        else if (i == rz_size - 1 && weightPenetration > 0.)
+        {
+            // when the beam has gone through the whole layered tissue but there is a lot of transmission such that the intensity of the beam does not
+            // reduce to I/e within the tissue, the penetration depth has to be the whole thickness of the tissue model
+            penetrationDepth = tissueDept;
+            break;
+        }
+
+    }
+    this->resultsStream << sim->outp_filename << "," << 1.0F - sim->start_weight) << "," << (double)Rd/scale1 << ",";
+    this->resultsStream << (double)A/scale1 << "," << (double)T/scale1) << ","  << (double)penetrationDepth << "\n";
+    // the simulation id
+    //fprintf(pFile_outp, sim->outp_filename);
+    //fprintf(pFile_outp, ",");
+    // Write other stuff here first!
+    //fprintf(pFile_outp,"%G,", 1.0F - sim->start_weight);
+    //fprintf(pFile_outp,"%G,",(double)Rd/scale1);
+    //fprintf(pFile_outp,"%G,",(double)A/scale1);
+    //fprintf(pFile_outp,"%G,",(double)T/scale1);
+    //fprintf(pFile_outp, "%f\n",(double)penetrationDepth);
+}
+
+
+void SimulationResults::writeSimulationResults(char* mcoFile){
+    FILE* pFile_outp;
+    pFile_outp = fopen (mcoFile , "a");
+    if (pFile_outp == NULL){perror ("Error opening output file"); cout << "unable to open mcoFile";}
+    std::string results = this->resultsStream.str();
+    fprintf(pFile_outp, results.c_str());
+    fclose(pFile_outp);
 }
