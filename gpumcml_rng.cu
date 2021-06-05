@@ -56,6 +56,7 @@ int init_RNG(UINT64 *x, UINT32 *a,
   FILE *fp;
   UINT32 begin=0u;
   UINT32 fora,tmp1,tmp2;
+  int successCode = 0;
 
   if (strlen(safeprimes_file) == 0)
   {
@@ -71,7 +72,11 @@ int init_RNG(UINT64 *x, UINT32 *a,
     return 1;
   }
   
-  fscanf(fp,"%u %u %u",&begin,&tmp1,&tmp2);
+  successCode = fscanf(fp,"%u %u %u",&begin,&tmp1,&tmp2);
+  if (successCode != 3){
+      printf("%u Failed initializing in init_RNG", successCode);
+      return successCode;
+  }
 
   // Here we set up a loop, using the first multiplier in the file to generate x's and c's
   // There are some restictions to these two numbers:
@@ -88,7 +93,11 @@ int init_RNG(UINT64 *x, UINT32 *a,
 
   for (UINT32 i=0;i < n_rng;i++)
   {
-    fscanf(fp,"%u %u %u",&fora,&tmp1,&tmp2);
+    successCode = fscanf(fp,"%u %u %u",&fora,&tmp1,&tmp2);
+    if (successCode != 3){
+        printf("%u Failed initializing in init_RNG", successCode);
+        return successCode;
+    }
     a[i]=fora;
     x[i]=0;
     while( (x[i]==0) | (((UINT32)(x[i]>>32))>=(fora-1)) | (((UINT32)x[i])>=0xfffffffful))
