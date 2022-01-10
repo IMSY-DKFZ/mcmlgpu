@@ -44,7 +44,8 @@ endif
 # Compiler flags
 ######################################################################
 
-CUDA_INSTALL_ROOT ?= /usr/local/cuda
+#CUDA_INSTALL_ROOT ?= /usr/local/cuda
+CUDA_INSTALL_ROOT ?= /usr
 
 NVCC := $(CUDA_INSTALL_ROOT)/bin/nvcc
 GCC := g++

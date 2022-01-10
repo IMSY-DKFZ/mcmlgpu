@@ -12,3 +12,6 @@ make gpumcml.sm_20
 
 `make download` download files needed for compilation: `cutil-linux` and `safeprimes_base32`.
 Therefore you need internet connection for that step.
+
+You further need to ensure that the `CUDA_INSTALL_ROOT` path in line 47 of the `makefile` points to your local nvcc path.
+Default path is `/usr/local/cuda/bin/nvcc`, your local path structure (likely `/usr/*/bin/nvcc`) can be found via `which nvcc`.
