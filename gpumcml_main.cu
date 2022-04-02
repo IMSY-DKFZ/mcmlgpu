@@ -99,6 +99,7 @@
 
 #include "gpumcml_kernel.cu"
 #include "gpumcml_mem.cu"
+#include "tqdm/tqdm.h"
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
 
@@ -475,11 +476,12 @@ int main(int argc, char* argv[])
 
   SimulationResults simResults;
   //perform all the simulations
+  tqdm pbar;
   for(int i = 0; i < n_simulations; i++)
   {
     // Run a simulation
     elapsedTime = DoOneSimulation(i, &simulations[i], hstates, num_GPUs, x, a, mcoFile, &simResults);
-    printProgress(i / float(n_simulations), elapsedTime);
+    pbar.progress(i , n_simulations);
   }
   simResults.writeSimulationResults(mcoFile);
   // Free host thread states.

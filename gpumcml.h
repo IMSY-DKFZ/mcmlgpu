@@ -204,9 +204,6 @@ extern int interpret_arg(int argc, char* argv[], char **fpath_p,
 extern int read_simulation_data(char* filename,
         SimulationStruct** simulations, int ignoreAdetection);
 
-extern int Write_Simulation_Results(SimState* HostMem,
-        SimulationStruct* sim, float simulation_time, char* mcoFile);
-
 extern void FreeSimulationStruct(SimulationStruct* sim, int n_simulations);
 
 void printProgress (double percentage, double elapsedTime);
