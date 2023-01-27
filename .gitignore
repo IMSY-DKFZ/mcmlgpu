@@ -6,5 +6,7 @@
 *.module_id
 *.ptx
 *.o
+*.mco
+*.mci
 cutil-linux
 executable
