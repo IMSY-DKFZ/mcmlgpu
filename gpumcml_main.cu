@@ -99,6 +99,7 @@
 
 #include "gpumcml_kernel.cu"
 #include "gpumcml_mem.cu"
+#include "tqdm/tqdm.h"
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
 
@@ -236,7 +237,7 @@ static CUT_THREADPROC RunGPUi(HostThreadState *hstate)
 //////////////////////////////////////////////////////////////////////////////
 static double DoOneSimulation(int sim_id, SimulationStruct* simulation,
                             HostThreadState* hstates[], UINT32 num_GPUs,
-                            UINT64 *x, UINT32 *a, char* mcoFile)
+                            UINT64 *x, UINT32 *a, char* mcoFile, SimulationResults* simResults)
 {
   // printf("\n------------------------------------------------------------\n");
   // printf("        Simulation #%d\n", sim_id);
@@ -334,8 +335,10 @@ static double DoOneSimulation(int sim_id, SimulationStruct* simulation,
 
     elapsedTime = static_cast<double>(cutGetTimerValue(execTimer));
     // printf("\n\n>>>>>>Simulation time: %.3f ms\n", elapsedTime);
-
-    Write_Simulation_Results(hss0, simulation, elapsedTime, mcoFile);
+    // TODO: create class to store results and write them only at the end of all simulations
+    // could create a method within a class called registerSimulationResult
+    //Write_Simulation_Results(hss0, simulation, elapsedTime, mcoFile);
+    simResults->registerSimulationResults(hss0, simulation);
   }
 
   CUT_SAFE_CALL( cutDeleteTimer(execTimer) );
@@ -471,14 +474,16 @@ int main(int argc, char* argv[])
   fprintf(pFile_outp, "ID,Specular,Diffuse,Absorbed,Transmittance,Penetration\n");
   fclose(pFile_outp);
 
-    //perform all the simulations
+  SimulationResults simResults;
+  //perform all the simulations
+  tqdm pbar;
   for(int i = 0; i < n_simulations; i++)
   {
     // Run a simulation
-    elapsedTime = DoOneSimulation(i, &simulations[i], hstates, num_GPUs, x, a, mcoFile);
-    printProgress(i / float(n_simulations), elapsedTime);
+    elapsedTime = DoOneSimulation(i, &simulations[i], hstates, num_GPUs, x, a, mcoFile, &simResults);
+    pbar.progress(i , n_simulations);
   }
-
+  simResults.writeSimulationResults(mcoFile);
   // Free host thread states.
   for (i = 0; i < num_GPUs; ++i) free(hstates[i]);
 
@@ -489,7 +494,3 @@ int main(int argc, char* argv[])
 
   return 0; 
 }
-
-//////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////
-
