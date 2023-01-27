@@ -46,7 +46,12 @@ endif
 
 CUDA_INSTALL_ROOT ?= /usr/local/cuda
 
-NVCC := $(CUDA_INSTALL_ROOT)/bin/nvcc
+ifneq ("$(wildcard /usr/bin/nvcc)","")
+    NVCC := /usr/bin/nvcc
+else
+    NVCC := /usr/local/cuda/bin/nvcc
+endif
+
 GCC := g++
 
 HP_64 = $(shell uname -m | grep 64)
