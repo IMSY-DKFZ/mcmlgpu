@@ -1,18 +1,21 @@
-FROM nvidia/cuda:11.4.0-devel-ubuntu20.04
+FROM nvidia/cuda:11.6.2-devel-ubuntu20.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=Europe/London
 
 WORKDIR /code
 
 RUN apt-get update
-
-COPY makefile makefile
+RUN apt-get install -y cmake
 
 COPY . .
 
-RUN ["make", "clean_sm_20"]
-RUN ["make", "gpumcml.sm_20"]
-RUN ["chmod", "+x", "gpumcml.sm_20"]
+WORKDIR /code/build
 RUN nvcc --version
+RUN cmake ..
+RUN make MCML -j
+RUN chmod +x MCML
 
-ENTRYPOINT ["./gpumcml.sm_20"]
+ENTRYPOINT ["/code/build/MCML"]
 
 CMD ["-A"]

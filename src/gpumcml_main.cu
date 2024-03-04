@@ -77,29 +77,17 @@
 #include <float.h> //for FLT_MAX 
 #include <stdio.h>
 #include <string.h>
+#include <thread>
 
 #include <cuda_runtime.h>
-
-
-#ifdef _WIN32
-#include "gpumcml_io.c"
-#include "cutil.h"
-#else 
-#include <cutil.h>
-#endif
-
-#ifdef _WIN32 
-#include "cutil-win32/multithreading.h"
-#else
-#include "multithreading.h"
-#endif
-
+#include "gpumcml_io.cpp"
 #include "gpumcml.h"
 #include "gpumcml_kernel.h"
 
 #include "gpumcml_kernel.cu"
 #include "gpumcml_mem.cu"
-#include "tqdm/tqdm.h"
+#include "../tqdm/tqdm.h"
+
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
 
@@ -107,9 +95,9 @@
 //   Supports multiple GPUs by allowing multiple host threads to launch kernel
 //   Each thread calls RunGPUi with its own HostThreadState parameters
 //////////////////////////////////////////////////////////////////////////////
-static CUT_THREADPROC RunGPUi(HostThreadState *hstate)
+static void RunGPUi(HostThreadState *hstate)
 {
-  SimState *HostMem = &(hstate->host_sim_state);
+  SimState* HostMem = &(hstate->host_sim_state);
   SimState DeviceMem;
   GPUThreadStates tstates;
   // total number of threads in the grid
@@ -117,6 +105,8 @@ static CUT_THREADPROC RunGPUi(HostThreadState *hstate)
   cudaError_t cudastat;
 
   CUDA_SAFE_CALL( cudaSetDevice(hstate->dev_id) );
+  CUDA_SAFE_CALL( cudaMalloc((void**)&DeviceMem.n_photons_left, sizeof(UINT32)) );
+  CUDA_SAFE_CALL( cudaDeviceSynchronize() );
 
   // Init the remaining states.
   InitSimStates(HostMem, &DeviceMem, &tstates, hstate->sim, n_threads);
@@ -230,12 +220,13 @@ static CUT_THREADPROC RunGPUi(HostThreadState *hstate)
   CopyDeviceToHostMem(HostMem, &DeviceMem, hstate->sim, n_threads);
   FreeDeviceSimStates(&DeviceMem, &tstates);
   // We still need the host-side structure.
+  cudaDeviceSynchronize();
 }
 
 //////////////////////////////////////////////////////////////////////////////
 //   Perform MCML simulation for one run out of N runs (in the input file)
 //////////////////////////////////////////////////////////////////////////////
-static double DoOneSimulation(int sim_id, SimulationStruct* simulation,
+static float DoOneSimulation(int sim_id, SimulationStruct* simulation,
                             HostThreadState* hstates[], UINT32 num_GPUs,
                             UINT64 *x, UINT32 *a, char* mcoFile, SimulationResults* simResults)
 {
@@ -245,7 +236,7 @@ static double DoOneSimulation(int sim_id, SimulationStruct* simulation,
 
   // Compute GPU-specific constant parameters.
   UINT32 A_rz_overflow = 0;
-  double elapsedTime = 0.;
+  float elapsedTime = 0.;
   // We only need it if we care about A_rz.
 #if defined(CACHE_A_RZ_IN_SMEM) && defined(USE_32B_ELEM_FOR_ARZ_SMEM)
   if (! simulation->ignoreAdetection)
@@ -258,10 +249,11 @@ static double DoOneSimulation(int sim_id, SimulationStruct* simulation,
 
   // printf("------------------------------------------------------------\n\n");
 
-  // Start simulation kernel exec timer
-  unsigned int execTimer = 0;
-  CUT_SAFE_CALL( cutCreateTimer(&execTimer) );
-  CUT_SAFE_CALL( cutStartTimer(execTimer) );
+  // Start simulation kernel timer
+  cudaEvent_t start, stop;
+  CUDA_SAFE_CALL(cudaEventCreate(&start));
+  CUDA_SAFE_CALL(cudaEventCreate(&stop));
+  CUDA_SAFE_CALL(cudaEventRecord(start));
 
   // Distribute all photons among GPUs.
   UINT32 n_photons_per_GPU = simulation->number_of_photons / num_GPUs;
@@ -283,15 +275,25 @@ static double DoOneSimulation(int sim_id, SimulationStruct* simulation,
       n_photons_per_GPU;
   }
 
+  cudaSetDevice(0);
+  cudaDeviceSynchronize();
+  int* devPtr;
+  size_t size = 10 * sizeof(int);
+
+  CUDA_SAFE_CALL(cudaMalloc(&devPtr, size));
+
   // Launch a dedicated host thread for each GPU.
-  CUTThread hthreads[MAX_GPU_COUNT];
+  std::array<std::thread, MAX_GPU_COUNT> hthreads;
   for (UINT32 i = 0; i < num_GPUs; ++i)
   {
-    hthreads[i] = cutStartThread((CUT_THREADROUTINE)RunGPUi, hstates[i]);
+    hthreads[i] = std::thread(RunGPUi, hstates[i]);
   }
 
   // Wait for all host threads to finish.
-  cutWaitForThreads(hthreads, num_GPUs);
+  for(auto& thread : hthreads) {
+    if(thread.joinable())
+        thread.join();
+  }
 
 
   // Check any of the threads failed.
@@ -331,9 +333,14 @@ static double DoOneSimulation(int sim_id, SimulationStruct* simulation,
       }
     }
 
-    CUT_SAFE_CALL( cutStopTimer(execTimer) );
-
-    elapsedTime = static_cast<double>(cutGetTimerValue(execTimer));
+    // record elapsed time
+    cudaEventRecord(stop);
+    cudaEventSynchronize(stop);
+    cudaError_t err = cudaEventElapsedTime(&elapsedTime, start, stop);
+    if (err != cudaSuccess){
+        printf("Failed to get elapsed time (error code %s)!\n", cudaGetErrorString(err));
+        exit(EXIT_FAILURE);
+    }
     // printf("\n\n>>>>>>Simulation time: %.3f ms\n", elapsedTime);
     // TODO: create class to store results and write them only at the end of all simulations
     // could create a method within a class called registerSimulationResult
@@ -341,7 +348,8 @@ static double DoOneSimulation(int sim_id, SimulationStruct* simulation,
     simResults->registerSimulationResults(hss0, simulation);
   }
 
-  CUT_SAFE_CALL( cutDeleteTimer(execTimer) );
+  cudaEventDestroy(start);
+  cudaEventDestroy(stop);
 
   // Free SimState structs.
   for (UINT32 i = 0; i < num_GPUs; ++i)
@@ -368,7 +376,7 @@ int main(int argc, char* argv[])
   SimulationStruct* simulations;
   int n_simulations;
   int i;
-  double elapsedTime = 0.;
+  float elapsedTime = 0.;
 
   // Parse command-line arguments.
   if (interpret_arg(argc, argv, &filename,
@@ -380,7 +388,7 @@ int main(int argc, char* argv[])
 
   // Determine the number of GPUs available.
   int dev_count;
-  CUDA_SAFE_CALL( cudaGetDeviceCount(&dev_count) );
+  CUDA_SAFE_CALL(cudaGetDeviceCount(&dev_count));
   if (dev_count <= 0)
   {
     fprintf(stderr, "No GPU available. Quit.\n");
@@ -449,11 +457,7 @@ int main(int argc, char* argv[])
   UINT64 *x = (UINT64*)malloc(n_threads * sizeof(UINT64));
   UINT32 *a = (UINT32*)malloc(n_threads * sizeof(UINT32));
 
-#ifdef _WIN32 
-    if (init_RNG(x, a, n_threads, "safeprimes_base32.txt", seed)) return 1;
-#else 
-    if (init_RNG(x, a, n_threads, "executable/safeprimes_base32.txt", seed)) return 1;
-#endif
+  if (init_RNG(x, a, n_threads, "../resources/safeprimes_base32.txt", seed)) return 1;
 
   printf("\nUsing the MWC random number generator ...\n");
 

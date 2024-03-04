@@ -104,6 +104,7 @@ int InitSimStates(SimState* HostMem, SimState* DeviceMem,
 
   // Allocate n_photons_left (on device only)
   size = sizeof(UINT32);
+  CUDA_SAFE_CALL(cudaDeviceSynchronize());
   CUDA_SAFE_CALL( cudaMalloc((void**)&DeviceMem->n_photons_left, size) );
   CUDA_SAFE_CALL( cudaMemcpy(DeviceMem->n_photons_left,
     HostMem->n_photons_left, size, cudaMemcpyHostToDevice) );

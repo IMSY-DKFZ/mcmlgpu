@@ -104,7 +104,7 @@
 /////////////////////////////////////////////
 // Compute Capability 2.0
 /////////////////////////////////////////////
-#if __CUDA_ARCH__ == 200
+#if (__CUDA_ARCH__ == 200) || (__CUDA_ARCH__ == 350)
 
 #define NUM_THREADS_PER_BLOCK 896
 // Disable this option to test the effect of true L1 cache (48KB).
