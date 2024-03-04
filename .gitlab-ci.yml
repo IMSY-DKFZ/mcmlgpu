@@ -13,8 +13,6 @@ build:
     - mkdir cmake-build && cd cmake-build
     - cmake ..
     - make MCML -j
-    - chmod +x MCML
-    - ./MCML
   artifacts:
     paths:
       - cmake-build/
