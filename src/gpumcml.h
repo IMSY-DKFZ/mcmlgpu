@@ -24,10 +24,19 @@
 #ifndef _GPUMCML_H_
 #define _GPUMCML_H_
 
+
 #define SINGLE_PRECISION
 
 #define PBSTR "||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||"
 #define PBWIDTH 60
+
+#  define CUDA_SAFE_CALL( call) {                                            \
+    cudaError_t err = call;                                                    \
+    if(err != cudaSuccess) {                                                \
+        fprintf(stderr, "Cuda error in file '%s' in line %i : %s.\n",        \
+                __FILE__, __LINE__, cudaGetErrorString( err) );              \
+        exit(EXIT_FAILURE);                                                  \
+    } }
 
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////

@@ -33,7 +33,7 @@
 #include <iostream>
 #include <unistd.h>
 
-#include "tqdm/tqdm.h"
+#include "../tqdm/tqdm.h"
 #include "gpumcml.h"
 
 using namespace std;
