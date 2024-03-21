@@ -92,7 +92,7 @@
 
 // Make sure __CUDA_ARCH__ is always defined by the user.
 #ifdef _WIN32
-  #define __CUDA_ARCH__ 200
+#define __CUDA_ARCH__ 200
 #endif
 
 #ifndef __CUDA_ARCH__
@@ -190,33 +190,31 @@ typedef UINT64 ARZ_SMEM_TY;
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
 
-typedef struct __align__(16)
-{
-  GFLOAT init_photon_w;      // initial photon weight
+typedef struct __align__(16) {
+    GFLOAT init_photon_w;      // initial photon weight
 
-  GFLOAT dz;                 // z grid separation.[cm]
-  GFLOAT dr;                 // r grid separation.[cm]
+    GFLOAT dz;                 // z grid separation.[cm]
+    GFLOAT dr;                 // r grid separation.[cm]
 
-  UINT32 na;                // array range 0..na-1.
-  UINT32 nz;                // array range 0..nz-1.
-  UINT32 nr;                // array range 0..nr-1.
+    UINT32 na;                // array range 0..na-1.
+    UINT32 nz;                // array range 0..nz-1.
+    UINT32 nr;                // array range 0..nr-1.
 
-  UINT32 num_layers;        // number of layers.
-  UINT32 A_rz_overflow;     // overflow threshold for A_rz_shared
+    UINT32 num_layers;        // number of layers.
+    UINT32 A_rz_overflow;     // overflow threshold for A_rz_shared
 } SimParamGPU;
 
-typedef struct __align__(16)
-{
-  GFLOAT z0, z1;             // z coordinates of a layer. [cm]
-  GFLOAT n;                  // refractive index of a layer.
+typedef struct __align__(16) {
+    GFLOAT z0, z1;             // z coordinates of a layer. [cm]
+    GFLOAT n;                  // refractive index of a layer.
 
-  GFLOAT muas;               // mua + mus
-  GFLOAT rmuas;              // 1/(mua+mus)
-  GFLOAT mua_muas;           // mua/(mua+mus)
+    GFLOAT muas;               // mua + mus
+    GFLOAT rmuas;              // 1/(mua+mus)
+    GFLOAT mua_muas;           // mua/(mua+mus)
 
-  GFLOAT g;                  // anisotropy.
+    GFLOAT g;                  // anisotropy.
 
-  GFLOAT cos_crit0, cos_crit1;
+    GFLOAT cos_crit0, cos_crit1;
 } LayerStructGPU;
 
 // The max number of layers supported (MAX_LAYERS including 2 ambient layers)
@@ -234,49 +232,47 @@ __constant__ LayerStructGPU d_layerspecs[MAX_LAYERS];
 // We use a struct of arrays as opposed to an array of structs to enable
 // global memory coalescing.
 //
-typedef struct
-{
-  // cartesian coordinates of the photon [cm]
-  GFLOAT *photon_x;
-  GFLOAT *photon_y;
-  GFLOAT *photon_z;
+typedef struct {
+    // cartesian coordinates of the photon [cm]
+    GFLOAT *photon_x;
+    GFLOAT *photon_y;
+    GFLOAT *photon_z;
 
-  // directional cosines of the photon
-  GFLOAT *photon_ux;
-  GFLOAT *photon_uy;
-  GFLOAT *photon_uz;
+    // directional cosines of the photon
+    GFLOAT *photon_ux;
+    GFLOAT *photon_uy;
+    GFLOAT *photon_uz;
 
-  GFLOAT *photon_w;            // photon weight
+    GFLOAT *photon_w;            // photon weight
 
-  // index to layer where the photon resides
-  UINT32 *photon_layer;
+    // index to layer where the photon resides
+    UINT32 *photon_layer;
 
-  UINT32 *is_active;          // is this thread active?
+    UINT32 *is_active;          // is this thread active?
 } GPUThreadStates;
 
-typedef struct
-{
-  // cartesian coordinates of the photon [cm]
-  GFLOAT x;
-  GFLOAT y;
-  GFLOAT z;
+typedef struct {
+    // cartesian coordinates of the photon [cm]
+    GFLOAT x;
+    GFLOAT y;
+    GFLOAT z;
 
-  // directional cosines of the photon
-  GFLOAT ux;
-  GFLOAT uy;
-  GFLOAT uz;
+    // directional cosines of the photon
+    GFLOAT ux;
+    GFLOAT uy;
+    GFLOAT uz;
 
-  GFLOAT w;            // photon weight
+    GFLOAT w;            // photon weight
 
-  GFLOAT s;            // step size [cm]
-  //GFLOAT sleft;        // leftover step size [cm]
-  //removed as an optimization to reduce code divergence
+    GFLOAT s;            // step size [cm]
+    //GFLOAT sleft;        // leftover step size [cm]
+    //removed as an optimization to reduce code divergence
 
-  // index to layer where the photon resides
-  UINT32 layer;
+    // index to layer where the photon resides
+    UINT32 layer;
 
-  // flag to indicate if photon hits a boundary
-  UINT32 hit;
+    // flag to indicate if photon hits a boundary
+    UINT32 hit;
 } PhotonStructGPU;
 
 #endif // _GPUMCML_KERNEL_H_

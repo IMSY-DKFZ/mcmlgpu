@@ -30,12 +30,12 @@
 #define PBSTR "||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||"
 #define PBWIDTH 60
 
-#  define CUDA_SAFE_CALL( call) {                                            \
-    cudaError_t err = call;                                                    \
+#  define CUDA_SAFE_CALL(call) {                                           \
+    cudaError_t err = call;                                                 \
     if(err != cudaSuccess) {                                                \
-        fprintf(stderr, "Cuda error in file '%s' in line %i : %s.\n",        \
-                __FILE__, __LINE__, cudaGetErrorString( err) );              \
-        exit(EXIT_FAILURE);                                                  \
+        fprintf(stderr, "Cuda error in file '%s' in line %i : %s.\n",       \
+                __FILE__, __LINE__, cudaGetErrorString( err) );             \
+        exit(EXIT_FAILURE);                                                 \
     } }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -52,7 +52,7 @@ typedef unsigned int UINT32;
 typedef float GFLOAT;
 
 // Critical weight for roulette
-#define WEIGHT 1E-4F        
+#define WEIGHT 1E-4F
 
 // scaling factor for photon weight, which is then converted to integer
 //
@@ -69,7 +69,7 @@ typedef float GFLOAT;
 #define EULER 2.71828182845904523536
 
 #define COSNINETYDEG 1.0E-6F
-#define COSZERO (1.0F - 1.0E-6F)   
+#define COSZERO (1.0F - 1.0E-6F)
 #define CHANCE 0.1F
 
 #define MCML_FP_ZERO 0.0F
@@ -110,92 +110,87 @@ typedef double GFLOAT;
 //////////////////////////////////////////////////////////////////////////////
 
 // Data structure for specifying each layer
-typedef struct
-{
-  float z_min;		// Layer z_min [cm]
-  float z_max;		// Layer z_max [cm]
-  float mutr;			// Reciprocal mu_total [cm]
-  float mua;			// Absorption coefficient [1/cm]
-  float g;			  // Anisotropy factor [-]
-  float n;			  // Refractive index [-]
+typedef struct {
+    float z_min;        // Layer z_min [cm]
+    float z_max;        // Layer z_max [cm]
+    float mutr;            // Reciprocal mu_total [cm]
+    float mua;            // Absorption coefficient [1/cm]
+    float g;              // Anisotropy factor [-]
+    float n;              // Refractive index [-]
 } LayerStruct;
 
 // Detection Grid specifications
-typedef struct
-{
-  float dr;		    // Detection grid resolution, r-direction [cm]
-  float dz;		    // Detection grid resolution, z-direction [cm]
+typedef struct {
+    float dr;            // Detection grid resolution, r-direction [cm]
+    float dz;            // Detection grid resolution, z-direction [cm]
 
-  UINT32 na;		  // Number of grid elements in angular-direction [-]
-  UINT32 nr;		  // Number of grid elements in r-direction
-  UINT32 nz;		  // Number of grid elements in z-direction
+    UINT32 na;          // Number of grid elements in angular-direction [-]
+    UINT32 nr;          // Number of grid elements in r-direction
+    UINT32 nz;          // Number of grid elements in z-direction
 } DetStruct;
 
 // Simulation input parameters 
-typedef struct 
-{
-  char outp_filename[STR_LEN];
-  char inp_filename[STR_LEN];
+typedef struct {
+    char outp_filename[STR_LEN];
+    char inp_filename[STR_LEN];
 
-  // the starting and ending offset (in the input file) for this simulation
-  long begin, end;
-  // ASCII or binary output
-  char AorB;
+    // the starting and ending offset (in the input file) for this simulation
+    long begin, end;
+    // ASCII or binary output
+    char AorB;
 
-  UINT32 number_of_photons;
-  int ignoreAdetection;
-  float start_weight;
+    UINT32 number_of_photons;
+    int ignoreAdetection;
+    float start_weight;
 
-  DetStruct det;
+    DetStruct det;
 
-  UINT32 n_layers;
-  LayerStruct* layers;
+    UINT32 n_layers;
+    LayerStruct *layers;
 } SimulationStruct;
 
 // Per-GPU simulation states
 // One instance of this struct exists in the host memory, while the other
 // in the global memory.
-typedef struct
-{
-  // points to a scalar that stores the number of photons that are not
-  // completed (i.e. either on the fly or not yet started)
-  UINT32 *n_photons_left;
+typedef struct {
+    // points to a scalar that stores the number of photons that are not
+    // completed (i.e. either on the fly or not yet started)
+    UINT32 *n_photons_left;
 
-  // per-thread seeds for random number generation
-  // arrays of length NUM_THREADS
-  // We put these arrays here as opposed to in GPUThreadStates because
-  // they live across different simulation runs and must be copied back
-  // to the host.
-  UINT64 *x;
-  UINT32 *a;
+    // per-thread seeds for random number generation
+    // arrays of length NUM_THREADS
+    // We put these arrays here as opposed to in GPUThreadStates because
+    // they live across different simulation runs and must be copied back
+    // to the host.
+    UINT64 *x;
+    UINT32 *a;
 
-  // output data
-  UINT64* Rd_ra;
-  UINT64* A_rz;			// Pointer to a 2D absorption matrix!
-  UINT64* Tt_ra;
+    // output data
+    UINT64 *Rd_ra;
+    UINT64 *A_rz;            // Pointer to a 2D absorption matrix!
+    UINT64 *Tt_ra;
 } SimState;
 
 // Everything a host thread needs to know in order to run simulation on
 // one GPU (host-side only)
-typedef struct
-{
-  // GPU identifier
-  unsigned int dev_id;        
+typedef struct {
+    // GPU identifier
+    unsigned int dev_id;
 
-  // those states that will be updated
-  SimState host_sim_state;
+    // those states that will be updated
+    SimState host_sim_state;
 
-  // simulation input parameters
-  SimulationStruct *sim;
+    // simulation input parameters
+    SimulationStruct *sim;
 
-  /* GPU-specific constant parameters */
+    /* GPU-specific constant parameters */
 
-  // number of thread blocks launched
-  UINT32 n_tblks;
+    // number of thread blocks launched
+    UINT32 n_tblks;
 
-  // the limit that indicates overflow of an element of A_rz
-  // in the shared memory
-  UINT32 A_rz_overflow;
+    // the limit that indicates overflow of an element of A_rz
+    // in the shared memory
+    UINT32 A_rz_overflow;
 
 } HostThreadState;
 
@@ -206,25 +201,25 @@ extern void usage(const char *prog_name);
 
 // Parse the command-line arguments.
 // Return 0 if successfull or a +ive error code.
-extern int interpret_arg(int argc, char* argv[], char **fpath_p,
-        unsigned long long* seed,
-        int* ignoreAdetection, unsigned int *num_GPUs, char** mcoFolder);
+extern int interpret_arg(int argc, char *argv[], char **fpath_p,
+                         unsigned long long *seed,
+                         int *ignoreAdetection, unsigned int *num_GPUs, char **mcoFolder);
 
-extern int read_simulation_data(char* filename,
-        SimulationStruct** simulations, int ignoreAdetection);
+extern int read_simulation_data(char *filename,
+                                SimulationStruct **simulations, int ignoreAdetection);
 
-extern void FreeSimulationStruct(SimulationStruct* sim, int n_simulations);
-
-void printProgress (double percentage, double elapsedTime);
+extern void FreeSimulationStruct(SimulationStruct *sim, int n_simulations);
 
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
 
-class SimulationResults{
+class SimulationResults {
 public:
     std::stringstream resultsStream;
-    void registerSimulationResults(SimState* HostMem, SimulationStruct* sim);
-    void writeSimulationResults(char* mcoFile);
+
+    void registerSimulationResults(SimState *HostMem, SimulationStruct *sim);
+
+    void writeSimulationResults(char *mcoFile);
 };
 
 #endif  // _GPUMCML_H_
