@@ -23,15 +23,18 @@ You can easily check this by doing `nvcc --version` from a terminal. If there is
 proceed to install the following dependencies:
 
 ```bash
-sudo apt install cmake
+sudo apt install cmake git
+git lfs install
 ```
 
-After installing the dependencies you can build MCML as follows
+After installing the dependencies, you can build MCML as follows. 
+You should make sure to indicate the correct GPU compute capabilities for your GPU. 
+You can list the supported ones by doing: `nvcc --list-gpu-code`.
 
 ```lang=bash
 mkdir build
 cd build 
-cmake ..
+cmake .. -DCUDA_ARCH=86
 make MCML -j
 ./MCML
 ```

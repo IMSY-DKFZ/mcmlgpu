@@ -23,13 +23,10 @@
 #define NFLOATS 5
 #define NINTS 5
 
-#include <time.h>
-#include <stdio.h>
-#include <math.h>
-#include <limits.h>
-#include <stdlib.h>
-#include <float.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cfloat>
+#include <cstring>
 #include <iostream>
 #include <unistd.h>
 
@@ -61,10 +58,7 @@ void usage(const char *prog_name) {
 int interpret_arg(int argc, char *argv[], char **fpath_p,
                   unsigned long long *seed,
                   int *ignoreAdetection, unsigned int *num_GPUs, char **mcoFolder) {
-    int i;
     int opt;
-    char *fpath = NULL;
-    char *mco_f = NULL;
 
     while ((opt = getopt(argc, argv, "i:AS:G:O:")) != -1) {
         switch (opt) {
@@ -145,7 +139,10 @@ int readfloats(int n_floats, float *temp, FILE *pFile) {
 
     while (ii <= 0) {
         if (feof(pFile)) return 0; //if we reach EOF here something is wrong with the file!
-        fgets(mystring, 200, pFile);
+        char *result = fgets(mystring, 200, pFile);
+        if (result == NULL) {
+            perror("Error white reading stream from file");
+        }
         memset(temp, 0, NFLOATS * sizeof(float));
         ii = sscanf(mystring, "%f %f %f %f %f", &temp[0], &temp[1], &temp[2], &temp[3], &temp[4]);
         if (ii > n_floats) return 0;
@@ -164,7 +161,10 @@ int readints(int n_ints, int *temp, FILE *pFile) //replace with template?
 
     while (ii <= 0) {
         if (feof(pFile)) return 0; //if we reach EOF here something is wrong with the file!
-        fgets(mystring, STR_LEN, pFile);
+        char *result = fgets(mystring, STR_LEN, pFile);
+        if (result == NULL) {
+            perror("Error white reading stream from file");
+        }
         memset(temp, 0, NINTS * sizeof(int));
         ii = sscanf(mystring, "%d %d %d %d %d", &temp[0], &temp[1], &temp[2], &temp[3], &temp[4]);
         if (ii > n_ints) return 0;
@@ -246,7 +246,10 @@ int read_simulation_data(char *filename, SimulationStruct **simulations, int ign
         ii = 0;
         while (ii <= 0) {
             (*simulations)[i].begin = ftell(pFile);
-            fgets(mystring, STR_LEN, pFile);
+            char *result = fgets(mystring, STR_LEN, pFile);
+            if (result == NULL) {
+                perror("Error white reading stream from file");
+            }
             ii = sscanf(mystring, "%s %c", str, &AorB);
             if (feof(pFile) || ii > 2) {
                 perror("Error reading output filename");
@@ -264,7 +267,10 @@ int read_simulation_data(char *filename, SimulationStruct **simulations, int ign
         // Read the number of photons
         ii = 0;
         while (ii <= 0) {
-            fgets(mystring, STR_LEN, pFile);
+            char *result = fgets(mystring, STR_LEN, pFile);
+            if (result == NULL) {
+                perror("Error white reading stream from file");
+            }
             number_of_photons = 0;
             ii = sscanf(mystring, "%lu", &number_of_photons);
             if (feof(pFile) || ii > 1) {
@@ -437,6 +443,6 @@ void SimulationResults::writeSimulationResults(char *mcoFile) {
         cout << "unable to open mcoFile";
     }
     std::string results = this->resultsStream.str();
-    fprintf(pFile_outp, results.c_str());
+    fprintf(pFile_outp, "%s", results.c_str());
     fclose(pFile_outp);
 }

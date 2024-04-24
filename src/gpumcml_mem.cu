@@ -20,7 +20,7 @@
 *   along with GPUMCML.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <stdio.h>
+#include <cstdio>
 
 #include "gpumcml_kernel.h"
 

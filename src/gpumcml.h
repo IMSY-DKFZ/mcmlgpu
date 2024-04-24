@@ -21,14 +21,11 @@
  */
 
 
-#ifndef _GPUMCML_H_
-#define _GPUMCML_H_
+#ifndef GPUMCML_H
+#define GPUMCML_H
 
 
 #define SINGLE_PRECISION
-
-#define PBSTR "||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||"
-#define PBWIDTH 60
 
 #  define CUDA_SAFE_CALL(call) {                                           \
     cudaError_t err = call;                                                 \
@@ -222,4 +219,4 @@ public:
     void writeSimulationResults(char *mcoFile);
 };
 
-#endif  // _GPUMCML_H_
+#endif  // GPUMCML_H
