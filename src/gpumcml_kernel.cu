@@ -25,8 +25,8 @@
 *   along with GPUMCML.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef _GPUMCML_KERNEL_CU_
-#define _GPUMCML_KERNEL_CU_
+#ifndef GPUMCML_KERNEL_CU
+#define GPUMCML_KERNEL_CU
 
 #include "gpumcml_kernel.h"
 #include "gpumcml_rng.cu"
@@ -39,12 +39,7 @@
 #define LOG(x) logf(x)
 #define SINCOS(x, sptr, cptr) __sincosf(x, sptr, cptr)
 #else
-// __CUDA_ARCH__ is defined by the CUDA compiler.
-#if __CUDA_ARCH__ >= 200
 #define FAST_DIV(x,y) __ddiv_rn(x,y)
-#else
-#define FAST_DIV(x,y) (x/y)
-#endif
 #define SQRT(x) sqrt(x)
 #define RSQRT(x) rsqrt(x)
 #define LOG(x) log(x)
@@ -701,5 +696,4 @@ __global__ void sum_A_rz(UINT64 *g_A_rz) {
     }
 }
 
-#endif  // _GPUMCML_KERNEL_CU_
-
+#endif  // GPUMCML_KERNEL_CU
