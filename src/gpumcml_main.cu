@@ -73,14 +73,11 @@
 *   along with GPUMCML.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-
-#include <float.h> //for FLT_MAX 
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 #include <thread>
 
 #include <cuda_runtime.h>
-#include "gpumcml_io.cpp"
 #include "gpumcml.h"
 #include "gpumcml_kernel.h"
 
@@ -145,7 +142,7 @@ static void RunGPUi(HostThreadState *hstate) {
         exit(1);
     }
 
-#if !defined(CACHE_A_RZ_IN_SMEM) && __CUDA_ARCH__ >= 200
+#if !defined(CACHE_A_RZ_IN_SMEM)
     // Configure the L1 cache for Fermi.
     if (hstate->sim->ignoreAdetection == 1)
     {
@@ -414,9 +411,9 @@ int main(int argc, char *argv[]) {
 
         // Validate the GPU compute capability.
         int cc = (props.major * 10 + props.minor) * 10;
-        if (cc < __CUDA_ARCH__) {
+        if (cc < 200) {
             fprintf(stderr, "\nGPU %u does not meet the Compute Capability "
-                            "this program requires (%d)! Abort.\n\n", i, __CUDA_ARCH__);
+                            "this program requires (%d)! Abort.\n\n", i, 200);
             exit(1);
         }
 
