@@ -46,6 +46,13 @@ Usage: /code/build/MCML [-A] [-S<seed>] [-G<num GPUs>] <input file>
   -O: output folder where the batch.mco file will be stored
 ````
 
+This application can also be packaged using conan. To do so, you should do the following from the root directory 
+of the repository.
+
+```bash
+conan create . issi/stable-cuda11.5-sm86 -o cuda_arch=86
+```
+
 # Docker image
 We also have a docker image that you can use for your projects. The image can be built by running the following command 
 in a terminal. Make sure to have _Docker_ or _Docker compose_ installed on your computer. You can append the flag 
