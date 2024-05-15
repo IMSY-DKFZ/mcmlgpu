@@ -36,21 +36,10 @@ mkdir build
 cd build 
 cmake .. -DCUDA_ARCH=86 -DCMAKE_INSTALL_PREFIX=/usr
 make MCML -j
-./MCML
 ```
-After the last command you should se the something similar to the following text in the terminal: 
 
-````bash
-Usage: /code/build/MCML [-A] [-S<seed>] [-G<num GPUs>] <input file>
-
-  -A: ignore A detection
-  -S: seed for random number generation (MT only)
-  -G: set the number of GPUs this program uses
-  -O: output folder where the batch.mco file will be stored
-````
-
-To install or uninstall the application on the system you can run the following. 
-You will need sudo permission if the path indicate din the previous step "CMAKE_INSTALL_PREFIX" is privileged.
+To install or uninstall the application on the system, you can run the following. 
+You will need sudo permission if the path indicated in the previous step "CMAKE_INSTALL_PREFIX" is privileged.
 ````bash
 make install
 make uninstall
