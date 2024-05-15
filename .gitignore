@@ -10,3 +10,4 @@
 *.mci
 cutil-linux
 executable
+*build*
