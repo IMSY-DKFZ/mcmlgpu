@@ -58,7 +58,7 @@
  *      number of copies of A_rz allocated in global memory
  *      Each block is assigned a copy to write to in a round-robin fashion.
  *      Using more copies can reduce access contention, but it increases
- *      global memory usage and reduces the benefit of the L2 cache on
+ *      global memory handleArgInterpretError and reduces the benefit of the L2 cache on
  *      Fermi GPUs (Compute Capability 2.0).
  *      This number should not exceed the number of thread blocks.
  *

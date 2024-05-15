@@ -357,7 +357,7 @@ int main(int argc, char *argv[]) {
     // Parse command-line arguments.
     if (interpret_arg(argc, argv, &filename,
                       &seed, &ignoreAdetection, &num_GPUs, &mcoFolder)) {
-        usage(argv[0]);
+        handleArgInterpretError();
         return 1;
     }
 
@@ -427,7 +427,7 @@ int main(int argc, char *argv[]) {
     UINT64 *x = (UINT64 *) malloc(n_threads * sizeof(UINT64));
     UINT32 *a = (UINT32 *) malloc(n_threads * sizeof(UINT32));
 
-    if (init_RNG(x, a, n_threads, "../resources/safeprimes_base32.txt", seed)) return 1;
+    if (init_RNG(x, a, n_threads, seed)) return 1;
 
     printf("\nUsing the MWC random number generator ...\n");
 

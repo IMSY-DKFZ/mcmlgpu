@@ -41,13 +41,8 @@ using namespace std;
 //////////////////////////////////////////////////////////////////////////////
 //   Print Command Line Help - How to run program and pass in parameters 
 //////////////////////////////////////////////////////////////////////////////
-void usage(const char *prog_name) {
-    printf("\nUsage: %s [-A] [-S<seed>] [-G<num GPUs>] <input file>\n\n",
-           prog_name);
-    printf("  -A: ignore A detection\n");
-    printf("  -S: seed for random number generation (MT only)\n");
-    printf("  -G: set the number of GPUs this program uses\n");
-    printf("  -O: output folder where the batch.mco file will be stored\n");
+void handleArgInterpretError() {
+    printf("\nFailed to interpret arguments, run MCML --help for more help");
     printf("\n");
     fflush(stdout);
 }
@@ -85,11 +80,12 @@ int interpret_arg(int argc, char *argv[], char **fpath_p,
             default: {/* '?' */
                 fprintf(stderr, "\nUsage:\n"
                                 "%s \n"
-                                "[-i str] /path/to/file.mci\n"
-                                "[-A None]\n"
+                                "[-i str] path to the .mci file that contains the tissue configuration\n"
+                                "[-A None] indicates that absorption detection should not be recorded. It can speed "
+                                "up simulations in some cases, but will not be able to calculate penetration depth.\n"
                                 "[-S int] seed\n"
-                                "[-G int] number of GPUS\n"
-                                "[-O str] /path/to/mco_folder\n",
+                                "[-G int] number of GPUs to use\n"
+                                "[-O str] Path to folder where the output file 'batch.mco' will be created\n",
                         argv[0]);
                 exit(EXIT_FAILURE);
             }

@@ -21,6 +21,16 @@
 */
 
 #include "gpumcml_kernel.h"
+#include <unistd.h>
+#include <climits>
+
+std::string getExecutablePath() {
+    char result[PATH_MAX];
+    ssize_t count = readlink("/proc/self/exe", result, PATH_MAX);
+    std::string fullPath = std::string(result, (count > 0) ? count : 0);
+    std::size_t found = fullPath.find_last_of("/");
+    return fullPath.substr(0,found);
+}
 
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
@@ -49,21 +59,23 @@ __device__ GFLOAT rand_MWC_oc(UINT64 *x, UINT32 *a) {
 //   Initialize random number generator 
 //////////////////////////////////////////////////////////////////////////////
 int init_RNG(UINT64 *x, UINT32 *a,
-             const UINT32 n_rng, const char *safeprimes_file, UINT64 xinit) {
+             const UINT32 n_rng, UINT64 xinit) {
     FILE *fp;
     UINT32 begin = 0u;
     UINT32 fora, tmp1, tmp2;
     int successCode = 0;
+    std::string basePath = getExecutablePath();
+    std::string safeprimes_file = basePath + "/../resources/safeprimes_base32.txt";
 
-    if (strlen(safeprimes_file) == 0) {
+    if (strlen(safeprimes_file.c_str()) == 0) {
         // Try to find it in the local directory
         safeprimes_file = "safeprimes_base32.txt";
     }
 
-    fp = fopen(safeprimes_file, "r");
+    fp = fopen(safeprimes_file.c_str(), "r");
 
     if (fp == NULL) {
-        printf("Could not find the file of safeprimes (%s)! Terminating!\n", safeprimes_file);
+        printf("Could not find the file of safeprimes (%s)! Terminating!\n", safeprimes_file.c_str());
         return 1;
     }
 
