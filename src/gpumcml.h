@@ -197,10 +197,10 @@ typedef struct {
 extern void handleArgInterpretError();
 
 // Parse the command-line arguments.
-// Return 0 if successfull or a +ive error code.
+// Return 0 if successful or an error code.
 extern int interpret_arg(int argc, char *argv[], char **fpath_p,
                          unsigned long long *seed,
-                         int *ignoreAdetection, unsigned int *num_GPUs, char **mcoFolder);
+                         int *ignoreAdetection, unsigned int *num_GPUs, char **mcoFile);
 
 extern int read_simulation_data(char *filename,
                                 SimulationStruct **simulations, int ignoreAdetection);

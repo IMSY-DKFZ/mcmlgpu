@@ -342,10 +342,9 @@ static float DoOneSimulation(int sim_id, SimulationStruct *simulation,
 //////////////////////////////////////////////////////////////////////////////
 int main(int argc, char *argv[]) {
     char *filename = NULL;
-    char *mcoFile = NULL;
     UINT64 seed = (UINT64) time(NULL);
     int ignoreAdetection = 0;
-    char *mcoFolder = NULL;
+    char *mcoFileName = NULL;
     UINT32 num_GPUs = 1;
     FILE *pFile_outp;
 
@@ -356,7 +355,7 @@ int main(int argc, char *argv[]) {
 
     // Parse command-line arguments.
     if (interpret_arg(argc, argv, &filename,
-                      &seed, &ignoreAdetection, &num_GPUs, &mcoFolder)) {
+                      &seed, &ignoreAdetection, &num_GPUs, &mcoFileName)) {
         handleArgInterpretError();
         return 1;
     }
@@ -442,8 +441,11 @@ int main(int argc, char *argv[]) {
     }
 
     // write file header
-    mcoFile = strcat(mcoFolder, "/batch.mco");
-    pFile_outp = fopen(mcoFile, "w");
+    pFile_outp = fopen(mcoFileName, "w");
+    if (pFile_outp == NULL) {
+        fprintf(stderr, "Error opening file: %s\n", mcoFileName);
+        exit(EXIT_FAILURE);
+    }
     fprintf(pFile_outp, "ID,Specular,Diffuse,Absorbed,Transmittance,Penetration\n");
     fclose(pFile_outp);
 
@@ -452,10 +454,10 @@ int main(int argc, char *argv[]) {
     tqdm pbar;
     for (int i = 0; i < n_simulations; i++) {
         // Run a simulation
-        elapsedTime = DoOneSimulation(i, &simulations[i], hstates, num_GPUs, x, a, mcoFile, &simResults);
+        elapsedTime = DoOneSimulation(i, &simulations[i], hstates, num_GPUs, x, a, mcoFileName, &simResults);
         pbar.progress(i, n_simulations);
     }
-    simResults.writeSimulationResults(mcoFile);
+    simResults.writeSimulationResults(mcoFileName);
     // Free host thread states.
     for (i = 0; i < num_GPUs; ++i) free(hstates[i]);
 

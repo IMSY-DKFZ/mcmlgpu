@@ -52,7 +52,7 @@ void handleArgInterpretError() {
 //////////////////////////////////////////////////////////////////////////////
 int interpret_arg(int argc, char *argv[], char **fpath_p,
                   unsigned long long *seed,
-                  int *ignoreAdetection, unsigned int *num_GPUs, char **mcoFolder) {
+                  int *ignoreAdetection, unsigned int *num_GPUs, char **mcoFile) {
     int opt;
 
     while ((opt = getopt(argc, argv, "i:AS:G:O:")) != -1) {
@@ -74,7 +74,7 @@ int interpret_arg(int argc, char *argv[], char **fpath_p,
                 break;
             }
             case 'O': {
-                *mcoFolder = optarg;
+                *mcoFile = optarg;
                 break;
             }
             default: {/* '?' */
@@ -85,7 +85,8 @@ int interpret_arg(int argc, char *argv[], char **fpath_p,
                                 "up simulations in some cases, but will not be able to calculate penetration depth.\n"
                                 "[-S int] seed\n"
                                 "[-G int] number of GPUs to use\n"
-                                "[-O str] Path to folder where the output file 'batch.mco' will be created\n",
+                                "[-O str] Path to file where the output will be stored. Make sure that the parent "
+                                "folder already exists. The file name will be created on the parent folder.\n",
                         argv[0]);
                 exit(EXIT_FAILURE);
             }
