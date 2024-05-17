@@ -1,7 +1,7 @@
 # Monte Carlo Multi Layer
 
 This repository contains the base code for Monte Carlo simulations in GPU. Some custom implementations have been added 
-to the original code: https://code.google.com/archive/p/gpumcml/.
+to the original code developed by Erik Alerstam, David Han, and William C. Y. Lo: https://code.google.com/archive/p/gpumcml/.
 
 # Setup development environment
 All you need to have is a CUDA capable computer, `cmake` and `git flow`. You can set up these dependencies by running 
