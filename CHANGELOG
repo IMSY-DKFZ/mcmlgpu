@@ -1,0 +1,59 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+### Added
+
+- 
+
+### Changed
+
+- 
+
+### Removed
+
+- 
+
+## [v0.0.3]
+
+### Added
+
+- Modern CMake compilation and installation 
+- Added the possibility to package GPUMCML using conan
+
+### Changed
+
+- Refactored project to contain all code inside src/
+
+### Fixed
+
+- Computation of penetration depth
+
+### Removed
+
+- dropped support for older versions of CUDA architectures
+
+## [v0.0.2]
+
+### Added
+
+- Created a dockerfile to build GPUMCML
+
+### Changed
+
+- Included tqdm for progress tracking isntead of printing the progress
+
+### Removed
+
+- 
+
+## [v0.0.1]
+
+- This is the original GPUMCML version. Only minor changes have been changed in this version, such changes are described below.
+- Penetration depth calculations have been added. 
+- Progress bar is also displayed when running the simulations instead of printing all the outputs after each simulation
