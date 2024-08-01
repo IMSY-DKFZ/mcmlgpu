@@ -107,9 +107,6 @@
  * You should not modify them unless you know what you are doing.
  */
 
-#define WARP_SZ 32
-#define NUM_WARPS_PER_BLK (NUM_THREADS_PER_BLOCK / WARP_SZ)
-
 #ifdef USE_32B_ELEM_FOR_ARZ_SMEM
 typedef UINT32 ARZ_SMEM_TY;
 #else

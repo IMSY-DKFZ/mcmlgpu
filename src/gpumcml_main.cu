@@ -166,7 +166,7 @@ static void RunGPUi(HostThreadState *hstate) {
             MCMLKernel<0><<<dimGrid, dimBlock, k_smem_sz>>>(DeviceMem, tstates);
         }
         // Wait for all threads to finish.
-        CUDA_SAFE_CALL(cudaDeviceSynchronize());
+        CUDA_SAFE_CALL_INFO(cudaDeviceSynchronize(), std::string ("Error processing: ") + hstate->sim->outp_filename);
         // Check if there was an error
         cudastat = cudaGetLastError();
         if (cudastat) {
@@ -211,13 +211,9 @@ static void RunGPUi(HostThreadState *hstate) {
 //////////////////////////////////////////////////////////////////////////////
 //   Perform MCML simulation for one run out of N runs (in the input file)
 //////////////////////////////////////////////////////////////////////////////
-static float DoOneSimulation(int sim_id, SimulationStruct *simulation,
+void DoOneSimulation(int sim_id, SimulationStruct *simulation,
                              HostThreadState *hstates[], UINT32 num_GPUs,
                              UINT64 *x, UINT32 *a, char *mcoFile, SimulationResults *simResults) {
-    // printf("\n------------------------------------------------------------\n");
-    // printf("        Simulation #%d\n", sim_id);
-    // printf("        - number_of_photons = %u\n", simulation->number_of_photons);
-
     // Compute GPU-specific constant parameters.
     UINT32 A_rz_overflow = 0;
     float elapsedTime = 0.;
@@ -230,14 +226,6 @@ static float DoOneSimulation(int sim_id, SimulationStruct *simulation,
       printf("        - A_rz_overflow = %u\n", A_rz_overflow);
     }
 #endif
-
-    // printf("------------------------------------------------------------\n\n");
-
-    // Start simulation kernel timer
-    cudaEvent_t start, stop;
-    CUDA_SAFE_CALL(cudaEventCreate(&start));
-    CUDA_SAFE_CALL(cudaEventCreate(&stop));
-    CUDA_SAFE_CALL(cudaEventRecord(start));
 
     // Distribute all photons among GPUs.
     UINT32 n_photons_per_GPU = simulation->number_of_photons / num_GPUs;
@@ -308,30 +296,14 @@ static float DoOneSimulation(int sim_id, SimulationStruct *simulation,
                 hss0->Tt_ra[j] += hssi->Tt_ra[j];
             }
         }
-
-        // record elapsed time
-        cudaEventRecord(stop);
-        cudaEventSynchronize(stop);
-        cudaError_t err = cudaEventElapsedTime(&elapsedTime, start, stop);
-        if (err != cudaSuccess) {
-            printf("Failed to get elapsed time (error code %s)!\n", cudaGetErrorString(err));
-            exit(EXIT_FAILURE);
-        }
-        // printf("\n\n>>>>>>Simulation time: %.3f ms\n", elapsedTime);
-        // TODO: create class to store results and write them only at the end of all simulations
-        // could create a method within a class called registerSimulationResult
-        //Write_Simulation_Results(hss0, simulation, elapsedTime, mcoFile);
+        // register simulation results without writing to file
         simResults->registerSimulationResults(hss0, simulation);
     }
-
-    cudaEventDestroy(start);
-    cudaEventDestroy(stop);
 
     // Free SimState structs.
     for (UINT32 i = 0; i < num_GPUs; ++i) {
         FreeHostSimState(&(hstates[i]->host_sim_state));
     }
-    return elapsedTime;
 }
 
 
@@ -349,7 +321,6 @@ int main(int argc, char *argv[]) {
     SimulationStruct *simulations;
     int n_simulations;
     int i;
-    float elapsedTime = 0.;
 
     // Parse command-line arguments.
     if (interpret_arg(argc, argv, &filename,
@@ -450,10 +421,11 @@ int main(int argc, char *argv[]) {
     SimulationResults simResults;
     //perform all the simulations
     tqdm pbar;
-    for (int i = 0; i < n_simulations; i++) {
-        // Run a simulation
-        elapsedTime = DoOneSimulation(i, &simulations[i], hstates, num_GPUs, x, a, mcoFileName, &simResults);
-        pbar.progress(i, n_simulations);
+    for (i = 0; i < n_simulations; i++) {
+      // Run a simulation
+      DoOneSimulation(i, &simulations[i], hstates, num_GPUs, x, a, mcoFileName,
+                      &simResults);
+      pbar.progress(i, n_simulations);
     }
     simResults.writeSimulationResults(mcoFileName);
     // Free host thread states.

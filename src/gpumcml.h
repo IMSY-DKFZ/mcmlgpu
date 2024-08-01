@@ -27,12 +27,21 @@
 
 #define SINGLE_PRECISION
 
-#  define CUDA_SAFE_CALL(call) {                                           \
+#  define CUDA_SAFE_CALL(call) {                                            \
     cudaError_t err = call;                                                 \
     if(err != cudaSuccess) {                                                \
         fprintf(stderr, "Cuda error in file '%s' in line %i : %s.\n",       \
                 __FILE__, __LINE__, cudaGetErrorString( err) );             \
         exit(EXIT_FAILURE);                                                 \
+    } }
+
+#define CUDA_SAFE_CALL_INFO(call, info) {                                     \
+    cudaError_t err = call;                                                   \
+    std::string str_info = info;                                              \
+    if(err != cudaSuccess) {                                                  \
+        fprintf(stderr, "Cuda error in file '%s' in line %i : %s. Info: %s\n",\
+        __FILE__, __LINE__, cudaGetErrorString( err), str_info.c_str() );     \
+        exit(EXIT_FAILURE);                                                   \
     } }
 
 //////////////////////////////////////////////////////////////////////////////
