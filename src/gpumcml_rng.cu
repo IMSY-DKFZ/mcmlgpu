@@ -65,7 +65,7 @@ int init_RNG(UINT64 *x, UINT32 *a,
     UINT32 fora, tmp1, tmp2;
     int successCode = 0;
     std::string basePath = getExecutablePath();
-    std::string safeprimes_file = basePath + "/../resources/safeprimes_base32.txt";
+    std::string safeprimes_file = basePath + "/safeprimes_base32.txt";
 
     if (strlen(safeprimes_file.c_str()) == 0) {
         // Try to find it in the local directory
