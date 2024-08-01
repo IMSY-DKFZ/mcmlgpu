@@ -101,8 +101,6 @@ static void RunGPUi(HostThreadState *hstate) {
     cudaError_t cudastat;
 
     CUDA_SAFE_CALL(cudaSetDevice(hstate->dev_id));
-    CUDA_SAFE_CALL(cudaMalloc((void **) &DeviceMem.n_photons_left, sizeof(UINT32)));
-    CUDA_SAFE_CALL(cudaDeviceSynchronize());
 
     // Init the remaining states.
     InitSimStates(HostMem, &DeviceMem, &tstates, hstate->sim, n_threads);
