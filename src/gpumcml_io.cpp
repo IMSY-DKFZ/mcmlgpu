@@ -56,7 +56,7 @@ int interpret_arg(int argc, char *argv[], char **fpath_p, unsigned long long *se
 {
     int opt;
 
-    while ((opt = getopt(argc, argv, "i:AS:G:O:")) != -1)
+    while ((opt = getopt(argc, argv, "i:AS:G:O:V")) != -1)
     {
         switch (opt)
         {
@@ -80,6 +80,18 @@ int interpret_arg(int argc, char *argv[], char **fpath_p, unsigned long long *se
             *mcoFile = optarg;
             break;
         }
+        case 'V': {
+            std::cout << "Version: " << PROJECT_VERSION_MAJOR << "." << PROJECT_VERSION_MINOR << "."
+                      << PROJECT_VERSION_PATCH << "\n"
+                      << "Build details:"
+                      << "\n"
+                      << "\tCommit SHA: " << GIT_COMMIT << "\n"
+                      << "\tSystem: " << CMAKE_SYSTEM << "\n"
+                      << "\tProcessor: " << CMAKE_SYSTEM_PROCESSOR << "\n"
+                      << "\tCompiler: " << CMAKE_CXX_COMPILER << "\n"
+                      << "\tDate: " << BUILD_TIMESTAMP << "\n";
+            exit(0);
+        }
         default: { /* '?' */
             fprintf(stderr,
                     "\nUsage:\n"
@@ -90,7 +102,8 @@ int interpret_arg(int argc, char *argv[], char **fpath_p, unsigned long long *se
                     "[-S int] seed\n"
                     "[-G int] number of GPUs to use\n"
                     "[-O str] Path to file where the output will be stored. Make sure that the parent "
-                    "folder already exists. The file name will be created on the parent folder.\n",
+                    "folder already exists. The file name will be created on the parent folder.\n"
+                    "[-V None] Prints software version and build details",
                     argv[0]);
             exit(EXIT_FAILURE);
         }

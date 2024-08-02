@@ -5,7 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
 ## [Unreleased]
+
+### Added
+
+-
+
+### Changed
+
+-
+
+### Removed
+
+-
+
+### Fixed
+
+-
+
+## [0.0.4]
 
 ### Added
 - Added new macro definition for CUDA_SAFE_CALL_INFO to print additional information when an error occurs.
@@ -15,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added conan package
   (https://git.dkfz.de/imsy/issi/mcmlgpu/-/commit/a5573e170f1795ca3dfb523386557649e509a545)
 - Adds editor config and pre-commit hooks
+- Added `-V` flag to print software version and build information
 
 ### Changed
 - Modified path for safe_primes installation to the same path as MCML
