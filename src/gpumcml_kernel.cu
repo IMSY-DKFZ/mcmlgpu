@@ -2,15 +2,15 @@
 *
 *   Kernel code for GPUMCML
 *   =========================================================================
-*   Featured Optimizations: 
-*   1) Shared memory cache for high fluence region  
-*   2) Reduced divergence 
+*   Featured Optimizations:
+*   1) Shared memory cache for high fluence region
+*   2) Reduced divergence
 *   3) Optimized atomicAdd
 *
 ****************************************************************************/
-/*	 
+/*
 *   This file is part of GPUMCML.
-* 
+*
 *   GPUMCML is free software: you can redistribute it and/or modify
 *   it under the terms of the GNU General Public License as published by
 *   the Free Software Foundation, either version 3 of the License, or
@@ -83,8 +83,8 @@ UINT32 compute_Arz_overflow_count(GFLOAT init_photon_w,
 //////////////////////////////////////////////////////////////////////////////
 
 //////////////////////////////////////////////////////////////////////////////
-//   Initialize photon position (x, y, z), direction (ux, uy, uz), weight (w), 
-//   and current layer (layer) 
+//   Initialize photon position (x, y, z), direction (ux, uy, uz), weight (w),
+//   and current layer (layer)
 //   Note: Infinitely narrow beam (pointing in the +z direction = downwards)
 //////////////////////////////////////////////////////////////////////////////
 __device__ void LaunchPhoton(PhotonStructGPU *photon) {
@@ -96,8 +96,8 @@ __device__ void LaunchPhoton(PhotonStructGPU *photon) {
 }
 
 //////////////////////////////////////////////////////////////////////////////
-//   Initialize thread states (tstates), created to allow a large 
-//   simulation to be broken up into batches 
+//   Initialize thread states (tstates), created to allow a large
+//   simulation to be broken up into batches
 //   (avoiding display driver time-out errors)
 //////////////////////////////////////////////////////////////////////////////
 __global__ void InitThreadState(GPUThreadStates tstates, UINT32 n_photons) {
@@ -127,7 +127,7 @@ __global__ void InitThreadState(GPUThreadStates tstates, UINT32 n_photons) {
 }
 
 //////////////////////////////////////////////////////////////////////////////
-//   Save thread states (tstates), by copying the current photon 
+//   Save thread states (tstates), by copying the current photon
 //   data from registers into global memory
 //////////////////////////////////////////////////////////////////////////////
 __device__ void SaveThreadState(SimState *d_state, GPUThreadStates *tstates,
@@ -151,7 +151,7 @@ __device__ void SaveThreadState(SimState *d_state, GPUThreadStates *tstates,
 }
 
 //////////////////////////////////////////////////////////////////////////////
-//   Restore thread states (tstates), by copying the latest photon 
+//   Restore thread states (tstates), by copying the latest photon
 //   data from global memory back into the registers
 //////////////////////////////////////////////////////////////////////////////
 __device__ void RestoreThreadState(SimState *d_state, GPUThreadStates *tstates,
@@ -237,7 +237,7 @@ __device__ void ComputeStepSize(PhotonStructGPU *photon,
 
 
 //////////////////////////////////////////////////////////////////////////////
-//   Check if the step size calculated above will cause the photon to hit the 
+//   Check if the step size calculated above will cause the photon to hit the
 //   boundary between 2 layers.
 //   Return 1 for a hit, 0 otherwise.
 //   If the projected step hits the boundary, the photon steps to the boundary
@@ -262,7 +262,7 @@ __device__ int HitBoundary(PhotonStructGPU *photon) {
 }
 
 //////////////////////////////////////////////////////////////////////////////
-//   Move the photon by step size (s) along direction (ux,uy,uz) 
+//   Move the photon by step size (s) along direction (ux,uy,uz)
 //////////////////////////////////////////////////////////////////////////////
 __device__ void Hop(PhotonStructGPU *photon) {
     photon->x += photon->s * photon->ux;
@@ -370,7 +370,7 @@ __device__ void FastReflectTransmit(PhotonStructGPU *photon,
 }
 
 //////////////////////////////////////////////////////////////////////////////
-//   Computing the scattering angle and new direction by 
+//   Computing the scattering angle and new direction by
 //	 sampling the polar deflection angle theta and the
 // 	 azimuthal angle psi.
 //////////////////////////////////////////////////////////////////////////////

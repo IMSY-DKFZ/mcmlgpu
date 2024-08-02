@@ -2,63 +2,63 @@
 //
 //   GPU-based Monte Carlo simulation of photon migration in multi-layered media (GPU-MCML)
 //   Copyright (C) 2009
-//	
-//   || DEVELOPMENT TEAM: 
+//
+//   || DEVELOPMENT TEAM:
 //   --------------------------------------------------------------------------------------------------
 //   Erik Alerstam, David Han, and William C. Y. Lo
-//   
-//   This code is the result of the collaborative efforts between 
-//   Lund University and the University of Toronto.  
 //
-//   || DOCUMENTATION AND USER MANUAL: 
+//   This code is the result of the collaborative efforts between
+//   Lund University and the University of Toronto.
+//
+//   || DOCUMENTATION AND USER MANUAL:
 //   --------------------------------------------------------------------------------------------------
-//	 Detailed "Wiki" style documentation is being developed for GPU-MCML 
+//	 Detailed "Wiki" style documentation is being developed for GPU-MCML
 //   and will be available on our webpage soon:
-//   http://code.google.com/p/gpumcml 
-// 
-//   || NEW FEATURES: 
+//   http://code.google.com/p/gpumcml
+//
+//   || NEW FEATURES:
 //   --------------------------------------------------------------------------------------------------
-//    - Supports the Fermi GPU architecture 
-//    - Multi-GPU execution 
-//    - Automatic selection of optimization parameters  
+//    - Supports the Fermi GPU architecture
+//    - Multi-GPU execution
+//    - Automatic selection of optimization parameters
 //    - Backward compatible on pre-Fermi graphics cards
 //    - Supports linux and Windows environment (Visual Studio)
-//   
-//   || PREVIOUS WORK: 
+//
+//   || PREVIOUS WORK:
 //   --------------------------------------------------------------------------------------------------
-//	 This code is the fusion of our earlier, preliminary implementations and combines the best features 
-//   from each implementation.  
+//	 This code is the fusion of our earlier, preliminary implementations and combines the best features
+//   from each implementation.
 //
 //   W. C. Y. Lo, T. D. Han, J. Rose, and L. Lilge, "GPU-accelerated Monte Carlo simulation for photodynamic
 //   therapy treatment planning," in Proc. of SPIE-OSA Biomedical Optics, vol. 7373.
-//   
-//   and 
+//
+//   and
 //
 //   http://www.atomic.physics.lu.se/biophotonics/our_research/monte_carlo_simulations/gpu_monte_carlo/
 //	 E. Alerstam, T. Svensson and S. Andersson-Engels, "Parallel computing with graphics processing
 //	 units for high-speed Monte Carlo simulations of photon migration", Journal of Biomedical Optics
 //	 Letters, 13(6) 060504 (2008).
 //
-//   || CITATION: 
+//   || CITATION:
 //   --------------------------------------------------------------------------------------------------
-//	 We encourage the use, and modification of this code, and hope it will help 
+//	 We encourage the use, and modification of this code, and hope it will help
 //	 users/programmers to utilize the power of GPGPU for their simulation needs. While we
 //	 don't have a scientific publication describing this code yet, we would very much appreciate it
-//	 if you cite our original papers above if you use this code or derivations 
+//	 if you cite our original papers above if you use this code or derivations
 //   thereof for your own scientific work
 //
-//	 To compile and run this code, please visit www.nvidia.com and download the necessary 
-//	 CUDA Toolkit, SDK, and Developer Drivers 
+//	 To compile and run this code, please visit www.nvidia.com and download the necessary
+//	 CUDA Toolkit, SDK, and Developer Drivers
 //
-//	 If you use Visual Studio, the express edition is available for free at 
-//   http://www.microsoft.com/express/Downloads/). 
-//  	
-//   This code is distributed under the terms of the GNU General Public Licence (see below). 
+//	 If you use Visual Studio, the express edition is available for free at
+//   http://www.microsoft.com/express/Downloads/).
+//
+//   This code is distributed under the terms of the GNU General Public Licence (see below).
 //
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
-/*	 
+/*
 *   This file is part of GPUMCML.
-* 
+*
 *   GPUMCML is free software: you can redistribute it and/or modify
 *   it under the terms of the GNU General Public License as published by
 *   the Free Software Foundation, either version 3 of the License, or
@@ -101,8 +101,6 @@ static void RunGPUi(HostThreadState *hstate) {
     cudaError_t cudastat;
 
     CUDA_SAFE_CALL(cudaSetDevice(hstate->dev_id));
-    CUDA_SAFE_CALL(cudaMalloc((void **) &DeviceMem.n_photons_left, sizeof(UINT32)));
-    CUDA_SAFE_CALL(cudaDeviceSynchronize());
 
     // Init the remaining states.
     InitSimStates(HostMem, &DeviceMem, &tstates, hstate->sim, n_threads);
@@ -168,7 +166,7 @@ static void RunGPUi(HostThreadState *hstate) {
             MCMLKernel<0><<<dimGrid, dimBlock, k_smem_sz>>>(DeviceMem, tstates);
         }
         // Wait for all threads to finish.
-        CUDA_SAFE_CALL(cudaDeviceSynchronize());
+        CUDA_SAFE_CALL_INFO(cudaDeviceSynchronize(), std::string ("Error processing: ") + hstate->sim->outp_filename);
         // Check if there was an error
         cudastat = cudaGetLastError();
         if (cudastat) {
@@ -213,13 +211,9 @@ static void RunGPUi(HostThreadState *hstate) {
 //////////////////////////////////////////////////////////////////////////////
 //   Perform MCML simulation for one run out of N runs (in the input file)
 //////////////////////////////////////////////////////////////////////////////
-static float DoOneSimulation(int sim_id, SimulationStruct *simulation,
+void DoOneSimulation(int sim_id, SimulationStruct *simulation,
                              HostThreadState *hstates[], UINT32 num_GPUs,
                              UINT64 *x, UINT32 *a, char *mcoFile, SimulationResults *simResults) {
-    // printf("\n------------------------------------------------------------\n");
-    // printf("        Simulation #%d\n", sim_id);
-    // printf("        - number_of_photons = %u\n", simulation->number_of_photons);
-
     // Compute GPU-specific constant parameters.
     UINT32 A_rz_overflow = 0;
     float elapsedTime = 0.;
@@ -232,14 +226,6 @@ static float DoOneSimulation(int sim_id, SimulationStruct *simulation,
       printf("        - A_rz_overflow = %u\n", A_rz_overflow);
     }
 #endif
-
-    // printf("------------------------------------------------------------\n\n");
-
-    // Start simulation kernel timer
-    cudaEvent_t start, stop;
-    CUDA_SAFE_CALL(cudaEventCreate(&start));
-    CUDA_SAFE_CALL(cudaEventCreate(&stop));
-    CUDA_SAFE_CALL(cudaEventRecord(start));
 
     // Distribute all photons among GPUs.
     UINT32 n_photons_per_GPU = simulation->number_of_photons / num_GPUs;
@@ -310,30 +296,14 @@ static float DoOneSimulation(int sim_id, SimulationStruct *simulation,
                 hss0->Tt_ra[j] += hssi->Tt_ra[j];
             }
         }
-
-        // record elapsed time
-        cudaEventRecord(stop);
-        cudaEventSynchronize(stop);
-        cudaError_t err = cudaEventElapsedTime(&elapsedTime, start, stop);
-        if (err != cudaSuccess) {
-            printf("Failed to get elapsed time (error code %s)!\n", cudaGetErrorString(err));
-            exit(EXIT_FAILURE);
-        }
-        // printf("\n\n>>>>>>Simulation time: %.3f ms\n", elapsedTime);
-        // TODO: create class to store results and write them only at the end of all simulations
-        // could create a method within a class called registerSimulationResult
-        //Write_Simulation_Results(hss0, simulation, elapsedTime, mcoFile);
+        // register simulation results without writing to file
         simResults->registerSimulationResults(hss0, simulation);
     }
-
-    cudaEventDestroy(start);
-    cudaEventDestroy(stop);
 
     // Free SimState structs.
     for (UINT32 i = 0; i < num_GPUs; ++i) {
         FreeHostSimState(&(hstates[i]->host_sim_state));
     }
-    return elapsedTime;
 }
 
 
@@ -342,21 +312,19 @@ static float DoOneSimulation(int sim_id, SimulationStruct *simulation,
 //////////////////////////////////////////////////////////////////////////////
 int main(int argc, char *argv[]) {
     char *filename = NULL;
-    char *mcoFile = NULL;
     UINT64 seed = (UINT64) time(NULL);
     int ignoreAdetection = 0;
-    char *mcoFolder = NULL;
+    char *mcoFileName = NULL;
     UINT32 num_GPUs = 1;
     FILE *pFile_outp;
 
     SimulationStruct *simulations;
     int n_simulations;
     int i;
-    float elapsedTime = 0.;
 
     // Parse command-line arguments.
     if (interpret_arg(argc, argv, &filename,
-                      &seed, &ignoreAdetection, &num_GPUs, &mcoFolder)) {
+                      &seed, &ignoreAdetection, &num_GPUs, &mcoFileName)) {
         handleArgInterpretError();
         return 1;
     }
@@ -442,20 +410,24 @@ int main(int argc, char *argv[]) {
     }
 
     // write file header
-    mcoFile = strcat(mcoFolder, "/batch.mco");
-    pFile_outp = fopen(mcoFile, "w");
+    pFile_outp = fopen(mcoFileName, "w");
+    if (pFile_outp == NULL) {
+        fprintf(stderr, "Error opening file: %s\n", mcoFileName);
+        exit(EXIT_FAILURE);
+    }
     fprintf(pFile_outp, "ID,Specular,Diffuse,Absorbed,Transmittance,Penetration\n");
     fclose(pFile_outp);
 
     SimulationResults simResults;
     //perform all the simulations
     tqdm pbar;
-    for (int i = 0; i < n_simulations; i++) {
-        // Run a simulation
-        elapsedTime = DoOneSimulation(i, &simulations[i], hstates, num_GPUs, x, a, mcoFile, &simResults);
-        pbar.progress(i, n_simulations);
+    for (i = 0; i < n_simulations; i++) {
+      // Run a simulation
+      DoOneSimulation(i, &simulations[i], hstates, num_GPUs, x, a, mcoFileName,
+                      &simResults);
+      pbar.progress(i, n_simulations);
     }
-    simResults.writeSimulationResults(mcoFile);
+    simResults.writeSimulationResults(mcoFileName);
     // Free host thread states.
     for (i = 0; i < num_GPUs; ++i) free(hstates[i]);
 
