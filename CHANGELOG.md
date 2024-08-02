@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (https://git.dkfz.de/imsy/issi/mcmlgpu/-/commit/9689ad1fab47407d5fe649677420f9e1fd35c561)
 - Added conan package
   (https://git.dkfz.de/imsy/issi/mcmlgpu/-/commit/a5573e170f1795ca3dfb523386557649e509a545)
+- Adds editor config and pre-commit hooks
 
 ### Changed
 - Modified path for safe_primes installation to the same path as MCML
