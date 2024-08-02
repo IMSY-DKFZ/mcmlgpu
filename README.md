@@ -4,18 +4,18 @@ This repository contains the base code for Monte Carlo simulations in GPU. Some 
 to the original code developed by Erik Alerstam, David Han, and William C. Y. Lo: https://code.google.com/archive/p/gpumcml/.
 
 # Setup development environment
-All you need to have is a CUDA capable computer, `cmake` and `git flow`. You can set up these dependencies by running
+All you need to have is a CUDA capable computer, `cmake` and `git lfs`. You can set up these dependencies by running
 the following commands from a terminal:
 
 ```bash
 sudo apt update
-sudo apt install git-flow cmake
-git flow init
+sudo apt install cmake git-lfs
+git lfs pull # do this from the root directory of the repository
 ```
 
 To develop a new feature you should create a new issue in [gitlab](https://git.dkfz.de/imsy/issi/mcmlgpu/-/issues). And
-start to work in the feature by running `git flow feature start T<issue-number>-task_short_name`. Once you have pushed
-your changes into the branch, you can start a merge request in gitlab.
+start to work in the feature by creating a new branch `<issue-number>-task_short_name`. Once
+you have pushed your changes into the branch, you can start a merge request in GitLab.
 
 # Build
 You will first need to install some dependencies. You need to make sure that you have a CUDA capable computer.
@@ -25,6 +25,7 @@ proceed to install the following dependencies:
 ```bash
 sudo apt install cmake git
 git lfs install
+git lfs pull
 ```
 
 After installing the dependencies, you can build MCML as follows.
