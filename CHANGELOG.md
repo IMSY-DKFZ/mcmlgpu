@@ -43,7 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Modern CMake compilation and installation 
+- Modern CMake compilation and installation
 - Added the possibility to package GPUMCML using conan
 
 ### Changed
@@ -70,10 +70,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
-- 
+-
 
 ## [v0.0.1]
 
 - This is the original GPUMCML version. Only minor changes have been changed in this version, such changes are described below.
-- Penetration depth calculations have been added. 
+- Penetration depth calculations have been added.
 - Progress bar is also displayed when running the simulations instead of printing all the outputs after each simulation

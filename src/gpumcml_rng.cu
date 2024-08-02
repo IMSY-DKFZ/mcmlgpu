@@ -3,9 +3,9 @@
 * Random Number Generator Algorithm and Initialization
 *
 ****************************************************************************/
-/*	 
+/*
 *   This file is part of GPUMCML.
-* 
+*
 *   GPUMCML is free software: you can redistribute it and/or modify
 *   it under the terms of the GNU General Public License as published by
 *   the Free Software Foundation, either version 3 of the License, or
@@ -36,7 +36,7 @@ std::string getExecutablePath() {
 //////////////////////////////////////////////////////////////////////////////
 
 //////////////////////////////////////////////////////////////////////////////
-//   Generates a random number between 0 and 1 [0,1) 
+//   Generates a random number between 0 and 1 [0,1)
 //////////////////////////////////////////////////////////////////////////////
 // DAVID: how to generate a double?
 __device__ GFLOAT rand_MWC_co(UINT64 *x, UINT32 *a) {
@@ -56,7 +56,7 @@ __device__ GFLOAT rand_MWC_oc(UINT64 *x, UINT32 *a) {
 }
 
 //////////////////////////////////////////////////////////////////////////////
-//   Initialize random number generator 
+//   Initialize random number generator
 //////////////////////////////////////////////////////////////////////////////
 int init_RNG(UINT64 *x, UINT32 *a,
              const UINT32 n_rng, UINT64 xinit) {
@@ -126,4 +126,3 @@ int init_RNG(UINT64 *x, UINT32 *a,
 
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
-
