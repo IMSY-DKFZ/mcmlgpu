@@ -1,11 +1,11 @@
 /*****************************************************************************
  *
- *   Header file for common data structures and constants (CPU and GPU) 
+ *   Header file for common data structures and constants (CPU and GPU)
  *
  ****************************************************************************/
-/*	 
+/*
  *   This file is part of GPUMCML.
- * 
+ *
  *   GPUMCML is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
  *   the Free Software Foundation, either version 3 of the License, or
@@ -20,20 +20,33 @@
  *   along with GPUMCML.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 #ifndef GPUMCML_H
 #define GPUMCML_H
 
-
 #define SINGLE_PRECISION
 
-#  define CUDA_SAFE_CALL(call) {                                           \
-    cudaError_t err = call;                                                 \
-    if(err != cudaSuccess) {                                                \
-        fprintf(stderr, "Cuda error in file '%s' in line %i : %s.\n",       \
-                __FILE__, __LINE__, cudaGetErrorString( err) );             \
-        exit(EXIT_FAILURE);                                                 \
-    } }
+#define CUDA_SAFE_CALL(call)                                                                                           \
+    {                                                                                                                  \
+        cudaError_t err = call;                                                                                        \
+        if (err != cudaSuccess)                                                                                        \
+        {                                                                                                              \
+            fprintf(stderr, "Cuda error in file '%s' in line %i : %s.\n", __FILE__, __LINE__,                          \
+                    cudaGetErrorString(err));                                                                          \
+            exit(EXIT_FAILURE);                                                                                        \
+        }                                                                                                              \
+    }
+
+#define CUDA_SAFE_CALL_INFO(call, info)                                                                                \
+    {                                                                                                                  \
+        cudaError_t err = call;                                                                                        \
+        std::string str_info = info;                                                                                   \
+        if (err != cudaSuccess)                                                                                        \
+        {                                                                                                              \
+            fprintf(stderr, "Cuda error in file '%s' in line %i : %s. Info: %s\n", __FILE__, __LINE__,                 \
+                    cudaGetErrorString(err), str_info.c_str());                                                        \
+            exit(EXIT_FAILURE);                                                                                        \
+        }                                                                                                              \
+    }
 
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
@@ -59,7 +72,7 @@ typedef float GFLOAT;
 //
 // Using a power of 2 here can also make multiplication/division faster.
 //
-#define WEIGHT_SCALE ((GFLOAT)(1<<24))
+#define WEIGHT_SCALE ((GFLOAT)(1 << 24))
 
 #define PI_const 3.1415926F
 #define RPI 0.318309886F
@@ -70,64 +83,66 @@ typedef float GFLOAT;
 #define CHANCE 0.1F
 
 #define MCML_FP_ZERO 0.0F
-#define FP_ONE  1.0F
-#define FP_TWO  2.0F
+#define FP_ONE 1.0F
+#define FP_TWO 2.0F
 
-#else   // SINGLE_PRECISION
+#else // SINGLE_PRECISION
 
 // NOTE: Double Precision
 typedef double GFLOAT;
 
 // Critical weight for roulette
-#define WEIGHT 1E-4     
+#define WEIGHT 1E-4
 
 // scaling factor for photon weight, which is then converted to integer
-#define WEIGHT_SCALE ((GFLOAT)(1<<24))
+#define WEIGHT_SCALE ((GFLOAT)(1 << 24))
 
 #define PI_const 3.1415926
 #define RPI 0.318309886
 
 #define COSNINETYDEG 1.0E-6
-#define COSZERO (1.0 - 1.0E-12)    
+#define COSZERO (1.0 - 1.0E-12)
 #define CHANCE 0.1
 
 #define MCML_FP_ZERO 0.0
-#define FP_ONE  1.0
-#define FP_TWO  2.0
+#define FP_ONE 1.0
+#define FP_TWO 2.0
 
-#endif  // SINGLE_PRECISION
+#endif // SINGLE_PRECISION
 
 #define STR_LEN 200
 
 #include <iostream>
 #include <sstream>
 
-
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
 
 // Data structure for specifying each layer
-typedef struct {
-    float z_min;        // Layer z_min [cm]
-    float z_max;        // Layer z_max [cm]
-    float mutr;            // Reciprocal mu_total [cm]
-    float mua;            // Absorption coefficient [1/cm]
-    float g;              // Anisotropy factor [-]
-    float n;              // Refractive index [-]
+typedef struct
+{
+    float z_min; // Layer z_min [cm]
+    float z_max; // Layer z_max [cm]
+    float mutr;  // Reciprocal mu_total [cm]
+    float mua;   // Absorption coefficient [1/cm]
+    float g;     // Anisotropy factor [-]
+    float n;     // Refractive index [-]
 } LayerStruct;
 
 // Detection Grid specifications
-typedef struct {
-    float dr;            // Detection grid resolution, r-direction [cm]
-    float dz;            // Detection grid resolution, z-direction [cm]
+typedef struct
+{
+    float dr; // Detection grid resolution, r-direction [cm]
+    float dz; // Detection grid resolution, z-direction [cm]
 
-    UINT32 na;          // Number of grid elements in angular-direction [-]
-    UINT32 nr;          // Number of grid elements in r-direction
-    UINT32 nz;          // Number of grid elements in z-direction
+    UINT32 na; // Number of grid elements in angular-direction [-]
+    UINT32 nr; // Number of grid elements in r-direction
+    UINT32 nz; // Number of grid elements in z-direction
 } DetStruct;
 
-// Simulation input parameters 
-typedef struct {
+// Simulation input parameters
+typedef struct
+{
     char outp_filename[STR_LEN];
     char inp_filename[STR_LEN];
 
@@ -149,7 +164,8 @@ typedef struct {
 // Per-GPU simulation states
 // One instance of this struct exists in the host memory, while the other
 // in the global memory.
-typedef struct {
+typedef struct
+{
     // points to a scalar that stores the number of photons that are not
     // completed (i.e. either on the fly or not yet started)
     UINT32 *n_photons_left;
@@ -164,13 +180,14 @@ typedef struct {
 
     // output data
     UINT64 *Rd_ra;
-    UINT64 *A_rz;            // Pointer to a 2D absorption matrix!
+    UINT64 *A_rz; // Pointer to a 2D absorption matrix!
     UINT64 *Tt_ra;
 } SimState;
 
 // Everything a host thread needs to know in order to run simulation on
 // one GPU (host-side only)
-typedef struct {
+typedef struct
+{
     // GPU identifier
     unsigned int dev_id;
 
@@ -197,21 +214,20 @@ typedef struct {
 extern void handleArgInterpretError();
 
 // Parse the command-line arguments.
-// Return 0 if successfull or a +ive error code.
-extern int interpret_arg(int argc, char *argv[], char **fpath_p,
-                         unsigned long long *seed,
-                         int *ignoreAdetection, unsigned int *num_GPUs, char **mcoFolder);
+// Return 0 if successful or an error code.
+extern int interpret_arg(int argc, char *argv[], char **fpath_p, unsigned long long *seed, int *ignoreAdetection,
+                         unsigned int *num_GPUs, char **mcoFile);
 
-extern int read_simulation_data(char *filename,
-                                SimulationStruct **simulations, int ignoreAdetection);
+extern int read_simulation_data(char *filename, SimulationStruct **simulations, int ignoreAdetection);
 
 extern void FreeSimulationStruct(SimulationStruct *sim, int n_simulations);
 
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
 
-class SimulationResults {
-public:
+class SimulationResults
+{
+  public:
     std::stringstream resultsStream;
 
     void registerSimulationResults(SimState *HostMem, SimulationStruct *sim);
@@ -219,4 +235,4 @@ public:
     void writeSimulationResults(char *mcoFile);
 };
 
-#endif  // GPUMCML_H
+#endif // GPUMCML_H
