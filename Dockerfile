@@ -14,6 +14,8 @@ WORKDIR /code/build
 RUN nvcc --version
 RUN cmake ..
 RUN make MCML -j
+RUN make package -j
+RUN dpkg -i MCML*.deb
 RUN chmod +x MCML
 
 ENTRYPOINT ["/code/build/MCML"]
