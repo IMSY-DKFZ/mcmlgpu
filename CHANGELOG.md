@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Improves information on how to build the application.
+- Integrates CLI11 as a argument parser.
 
 ### Removed
 

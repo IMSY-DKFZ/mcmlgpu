@@ -211,14 +211,11 @@ typedef struct
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
 
-extern void handleArgInterpretError();
-
 // Parse the command-line arguments.
 // Return 0 if successful or an error code.
-extern int interpret_arg(int argc, char *argv[], char **fpath_p, unsigned long long *seed, int *ignoreAdetection,
-                         unsigned int *num_GPUs, char **mcoFile);
+extern int interpret_arg(int argc, char *argv[]);
 
-extern int read_simulation_data(char *filename, SimulationStruct **simulations, int ignoreAdetection);
+extern int read_simulation_data(const char *filename, SimulationStruct **simulations, int ignoreAdetection);
 
 extern void FreeSimulationStruct(SimulationStruct *sim, int n_simulations);
 
@@ -232,7 +229,24 @@ class SimulationResults
 
     void registerSimulationResults(SimState *HostMem, SimulationStruct *sim);
 
-    void writeSimulationResults(char *mcoFile);
+    void writeSimulationResults(const char *mcoFile);
 };
+
+/**
+ * Structure to hold command line arguments
+ */
+struct CommandLineArguments
+{
+    bool ignore_absorption_detection = false;
+    std::string input_file;
+    std::string output_file;
+    UINT64 seed = (UINT64)time(nullptr);
+    UINT32 number_of_gpus = 1;
+};
+
+/**
+ * Global command line arguments
+ */
+extern struct CommandLineArguments g_commandLineArguments;
 
 #endif // GPUMCML_H

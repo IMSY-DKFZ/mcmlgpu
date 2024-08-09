@@ -160,8 +160,8 @@ static void RunGPUi(HostThreadState *hstate) {
 //   Perform MCML simulation for one run out of N runs (in the input file)
 //////////////////////////////////////////////////////////////////////////////
 void DoOneSimulation(int sim_id, SimulationStruct *simulation,
-                             HostThreadState *hstates[], UINT32 num_GPUs,
-                             UINT64 *x, UINT32 *a, char *mcoFile, SimulationResults *simResults) {
+                     HostThreadState *hstates[], UINT32 num_GPUs,
+                     UINT64 *x, UINT32 *a, const char *mcoFile, SimulationResults *simResults) {
     // Compute GPU-specific constant parameters.
     UINT32 A_rz_overflow = 0;
     float elapsedTime = 0.;
@@ -259,23 +259,21 @@ void DoOneSimulation(int sim_id, SimulationStruct *simulation,
 //   Perform MCML simulation for one run out of N runs (in the input file)
 //////////////////////////////////////////////////////////////////////////////
 int main(int argc, char *argv[]) {
-    char *filename = NULL;
-    UINT64 seed = (UINT64) time(NULL);
-    int ignoreAdetection = 0;
-    char *mcoFileName = NULL;
-    UINT32 num_GPUs = 1;
+    int result = interpret_arg(argc, argv);
+    if (result){
+        printf("Error parsing arguments");
+        return 1;
+    }
+    const char *filename = g_commandLineArguments.input_file.c_str();
+    UINT64 seed = g_commandLineArguments.seed;
+    bool ignoreAdetection = g_commandLineArguments.ignore_absorption_detection;
+    const char *mcoFileName = g_commandLineArguments.output_file.c_str();
+    UINT32 num_GPUs = g_commandLineArguments.number_of_gpus;
     FILE *pFile_outp;
 
     SimulationStruct *simulations;
     int n_simulations;
     int i;
-
-    // Parse command-line arguments.
-    if (interpret_arg(argc, argv, &filename,
-                      &seed, &ignoreAdetection, &num_GPUs, &mcoFileName)) {
-        handleArgInterpretError();
-        return 1;
-    }
 
     // Determine the number of GPUs available.
     int dev_count;

@@ -28,59 +28,25 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
-#include <unistd.h>
 
 #include "../tqdm/tqdm.h"
+#include "CLI11.h"
 #include "gpumcml.h"
 
 using namespace std;
 
-//////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////
-
-//////////////////////////////////////////////////////////////////////////////
-//   Print Command Line Help - How to run program and pass in parameters
-//////////////////////////////////////////////////////////////////////////////
-void handleArgInterpretError()
-{
-    printf("\nFailed to interpret arguments, run MCML --help for more help");
-    printf("\n");
-    fflush(stdout);
-}
+struct CommandLineArguments g_commandLineArguments;
 
 //////////////////////////////////////////////////////////////////////////////
 //   Parse command line arguments
 //////////////////////////////////////////////////////////////////////////////
-int interpret_arg(int argc, char *argv[], char **fpath_p, unsigned long long *seed, int *ignoreAdetection,
-                  unsigned int *num_GPUs, char **mcoFile)
+int interpret_arg(int argc, char *argv[])
 {
-    int opt;
-
-    while ((opt = getopt(argc, argv, "i:AS:G:O:V")) != -1)
-    {
-        switch (opt)
-        {
-        case 'i': {
-            *fpath_p = optarg;
-            break;
-        }
-        case 'A': {
-            *ignoreAdetection = 1;
-            break;
-        }
-        case 'S': {
-            *seed = (unsigned long long)atoi(optarg);
-            break;
-        }
-        case 'G': {
-            *num_GPUs = (uint)atoi(optarg);
-            break;
-        }
-        case 'O': {
-            *mcoFile = optarg;
-            break;
-        }
-        case 'V': {
+    CLI::App app{"XIMEA camera recorder"};
+    // add version callback
+    app.add_flag_callback(
+        "--version,-V",
+        [&] {
             std::cout << "Version: " << PROJECT_VERSION_MAJOR << "." << PROJECT_VERSION_MINOR << "."
                       << PROJECT_VERSION_PATCH << "\n"
                       << "Build details:"
@@ -91,25 +57,36 @@ int interpret_arg(int argc, char *argv[], char **fpath_p, unsigned long long *se
                       << "\tCompiler: " << CMAKE_CXX_COMPILER << "\n"
                       << "\tDate: " << BUILD_TIMESTAMP << "\n";
             exit(0);
-        }
-        default: { /* '?' */
-            fprintf(stderr,
-                    "\nUsage:\n"
-                    "%s \n"
-                    "[-i str] path to the .mci file that contains the tissue configuration\n"
-                    "[-A None] indicates that absorption detection should not be recorded. It can speed "
-                    "up simulations in some cases, but will not be able to calculate penetration depth.\n"
-                    "[-S int] seed\n"
-                    "[-G int] number of GPUs to use\n"
-                    "[-O str] Path to file where the output will be stored. Make sure that the parent "
-                    "folder already exists. The file name will be created on the parent folder.\n"
-                    "[-V None] Prints software version and build details",
-                    argv[0]);
-            exit(EXIT_FAILURE);
-        }
-        }
+        },
+        "Print the version information");
+    // add options to CLI
+    auto input_file = app.add_option("-i,--input", g_commandLineArguments.input_file,
+                                     "Path to the .mci file that contains the tissue configuration.");
+    input_file->required();
+    auto output_file = app.add_option("-O,--output", g_commandLineArguments.output_file,
+                                      "Path to file where the output will be stored. Make sure that the parent folder "
+                                      "already exists. The file name will be created on the parent folder.");
+    output_file->required();
+    app.add_option("-S,--seed", g_commandLineArguments.seed, "Seed.");
+    app.add_option("-G,--n_gpus", g_commandLineArguments.number_of_gpus, "Number of GPUs to use.");
+    app.add_flag("-A,--ignore_absorption", g_commandLineArguments.ignore_absorption_detection,
+                 "Indicates that absorption detection should not be recorded. It can speed up simulations in some "
+                 "cases, but will not be able to calculate penetration depth.");
+
+    try
+    {
+        app.parse(argc, argv);
     }
-    return (*fpath_p == NULL);
+    catch (const CLI::CallForHelp &e)
+    {
+        app.exit(e);
+        exit(0);
+    }
+    catch (const CLI::ParseError &e)
+    {
+        return app.exit(e);
+    }
+    return 0;
 }
 
 /***********************************************************
@@ -214,7 +191,7 @@ int ischar(char a)
 //////////////////////////////////////////////////////////////////////////////
 //   Parse simulation input file
 //////////////////////////////////////////////////////////////////////////////
-int read_simulation_data(char *filename, SimulationStruct **simulations, int ignoreAdetection)
+int read_simulation_data(const char *filename, SimulationStruct **simulations, int ignoreAdetection)
 {
     int i = 0;
     int ii = 0;
@@ -505,7 +482,7 @@ void SimulationResults::registerSimulationResults(SimState *HostMem, SimulationS
     this->resultsStream << (double)A / scale1 << "," << (double)T / scale1 << "," << (double)penetrationDepth << "\n";
 }
 
-void SimulationResults::writeSimulationResults(char *mcoFile)
+void SimulationResults::writeSimulationResults(const char *mcoFile)
 {
     FILE *pFile_outp;
     pFile_outp = fopen(mcoFile, "a");
