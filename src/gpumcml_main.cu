@@ -1,61 +1,9 @@
-/////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-//   GPU-based Monte Carlo simulation of photon migration in multi-layered media (GPU-MCML)
-//   Copyright (C) 2009
-//
-//   || DEVELOPMENT TEAM:
-//   --------------------------------------------------------------------------------------------------
-//   Erik Alerstam, David Han, and William C. Y. Lo
-//
-//   This code is the result of the collaborative efforts between
-//   Lund University and the University of Toronto.
-//
-//   || DOCUMENTATION AND USER MANUAL:
-//   --------------------------------------------------------------------------------------------------
-//	 Detailed "Wiki" style documentation is being developed for GPU-MCML
-//   and will be available on our webpage soon:
-//   http://code.google.com/p/gpumcml
-//
-//   || NEW FEATURES:
-//   --------------------------------------------------------------------------------------------------
-//    - Supports the Fermi GPU architecture
-//    - Multi-GPU execution
-//    - Automatic selection of optimization parameters
-//    - Backward compatible on pre-Fermi graphics cards
-//    - Supports linux and Windows environment (Visual Studio)
-//
-//   || PREVIOUS WORK:
-//   --------------------------------------------------------------------------------------------------
-//	 This code is the fusion of our earlier, preliminary implementations and combines the best features
-//   from each implementation.
-//
-//   W. C. Y. Lo, T. D. Han, J. Rose, and L. Lilge, "GPU-accelerated Monte Carlo simulation for photodynamic
-//   therapy treatment planning," in Proc. of SPIE-OSA Biomedical Optics, vol. 7373.
-//
-//   and
-//
-//   http://www.atomic.physics.lu.se/biophotonics/our_research/monte_carlo_simulations/gpu_monte_carlo/
-//	 E. Alerstam, T. Svensson and S. Andersson-Engels, "Parallel computing with graphics processing
-//	 units for high-speed Monte Carlo simulations of photon migration", Journal of Biomedical Optics
-//	 Letters, 13(6) 060504 (2008).
-//
-//   || CITATION:
-//   --------------------------------------------------------------------------------------------------
-//	 We encourage the use, and modification of this code, and hope it will help
-//	 users/programmers to utilize the power of GPGPU for their simulation needs. While we
-//	 don't have a scientific publication describing this code yet, we would very much appreciate it
-//	 if you cite our original papers above if you use this code or derivations
-//   thereof for your own scientific work
-//
-//	 To compile and run this code, please visit www.nvidia.com and download the necessary
-//	 CUDA Toolkit, SDK, and Developer Drivers
-//
-//	 If you use Visual Studio, the express edition is available for free at
-//   http://www.microsoft.com/express/Downloads/).
-//
-//   This code is distributed under the terms of the GNU General Public Licence (see below).
-//
-/////////////////////////////////////////////////////////////////////////////////////////////////////////
+/*****************************************************************************
+*
+*   Main control of MCMLGPU
+*   =========================================================================
+*
+****************************************************************************/
 /*
 *   This file is part of GPUMCML.
 *
