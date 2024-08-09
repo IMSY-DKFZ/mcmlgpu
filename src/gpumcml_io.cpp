@@ -42,7 +42,7 @@ struct CommandLineArguments g_commandLineArguments;
 //////////////////////////////////////////////////////////////////////////////
 int interpret_arg(int argc, char *argv[])
 {
-    CLI::App app{"XIMEA camera recorder"};
+    CLI::App app{"Monte Carlo Multi-Layer (MCML) accelerated by GPU"};
     // add version callback
     app.add_flag_callback(
         "--version,-V",
