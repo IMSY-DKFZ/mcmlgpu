@@ -22,6 +22,8 @@ This project adds the following features:
 10. Reduced terminal clutter.
 11. Eliminates dependency to deprecated `cutil` library.
 
+[![asciicast](https://asciinema.org/a/oHnqxPagK4X8zr6FWNzBl0fwm.svg)](https://asciinema.org/a/oHnqxPagK4X8zr6FWNzBl0fwm)
+
 # Setup development environment
 All you need to have is a CUDA capable computer, `cmake` and `git lfs`. You can set up these dependencies by running
 the following commands from a terminal:
