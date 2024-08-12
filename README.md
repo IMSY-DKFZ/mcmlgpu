@@ -112,3 +112,9 @@ in a terminal. Make sure to have _Docker_ or _Docker compose_ installed on your 
 docker build -t mcml:latest .
 docker run mcml:latest
 ```
+
+# Funding
+This project has received funding from the European Research Council (ERC) under the European Union’s Horizon 2020 research and innovation programme (grant agreement No. [101002198]).
+
+![ERC](resources/LOGO_ERC-FLAG_EU_.jpg)
+![DKFZ](resources/LOGO_DKFZ.png)
