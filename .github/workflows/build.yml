@@ -12,7 +12,7 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [ubuntu-22.04, ubuntu-24.04]
+        os: [self-hosted]
     runs-on: ${{ matrix.os }}
 
     steps:
