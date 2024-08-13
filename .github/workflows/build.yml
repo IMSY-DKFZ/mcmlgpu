@@ -20,19 +20,19 @@ jobs:
       uses: actions/checkout@v4.1.7
     - name: Install apt dependencies
       run: |
-        apt update && apt install cmake -y
+        sudo apt install cmake -y
     - name: Build project
       run: |
         mkdir build
         cd build
         cmake -DCMAKE_INSTALL_PREFIX=/usr ..
-        make all -j
-        make package -j
-        dpkg -i MCML*.deb
-    - name: Build and install DEB package
+        make MCML -j
+    - name: Create and install DEB package
       run: |
+        cd build
         make package -j
-        dpkg -i MCML*.deb
+        sudo dpkg -i MCML*.deb
     - name: Install application
       run: |
-        make install
+        cd build
+        sudo make install
