@@ -18,21 +18,6 @@ jobs:
     steps:
     - name: Checkout project
       uses: actions/checkout@v4.1.7
-    - name: Install apt dependencies
+    - name: Build & install
       run: |
-        sudo apt install cmake -y
-    - name: Build project
-      run: |
-        mkdir build
-        cd build
-        cmake -DCMAKE_INSTALL_PREFIX=/usr ..
-        make MCML -j
-    - name: Create and install DEB package
-      run: |
-        cd build
-        make package -j
-        sudo dpkg -i MCML*.deb
-    - name: Install application
-      run: |
-        cd build
-        sudo make install
+        docker build -t mcml:github .
