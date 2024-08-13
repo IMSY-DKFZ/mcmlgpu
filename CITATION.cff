@@ -6,6 +6,8 @@ authors:
   orcid: "https://orcid.org/0000-0002-3574-2085"
 - family-names: "Maier-Hein"
   given-names: "Lena"
+  orcid: "https://orcid.org/0000-0003-4910-9368"
 title: "mcmlgpu"
 version: 0.0.4
 url: "https://github.com/IMSY-DKFZ/mcmlgpu"
+doi: doi.org/10.5281/zenodo.13304909

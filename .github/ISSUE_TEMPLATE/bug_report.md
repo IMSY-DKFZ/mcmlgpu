@@ -23,7 +23,8 @@ Steps to reproduce the behavior:
 ### Environment
 
 * OS: [e.g. Linux / Windows / macOS]
-* Python version: [e.g. 3.10]
+* CMake version: [e.g. 3.28.6]
+* Compiler: [e.g. GNU, Clang]
 
 ### Screenshots
 
