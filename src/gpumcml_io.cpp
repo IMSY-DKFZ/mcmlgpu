@@ -147,8 +147,6 @@ int readfloats(int n_floats, float *temp, FILE *pFile)
         ii = sscanf(mystring, "%f %f %f %f %f", &temp[0], &temp[1], &temp[2], &temp[3], &temp[4]);
         if (ii > n_floats)
             return 0;
-        // if we read more number than defined something is wrong with the file!
-        // printf("ii=%d temp=%f %f %f %f %f\n",ii,temp[0],temp[1],temp[2],temp[3],temp[4]);
     }
     return 1; // Everyting appears to be ok!
 }
@@ -174,8 +172,6 @@ int readints(int n_ints, int *temp, FILE *pFile) // replace with template?
         ii = sscanf(mystring, "%d %d %d %d %d", &temp[0], &temp[1], &temp[2], &temp[3], &temp[4]);
         if (ii > n_ints)
             return 0;
-        // if we read more number than defined something is wrong with the file!
-        // printf("ii=%d temp=%f %f %f %f %f\n",ii,temp[0],temp[1],temp[2],temp[3],temp[4]);
     }
     return 1; // Everyting appears to be ok!
 }
@@ -222,7 +218,6 @@ int read_simulation_data(const char *filename, SimulationStruct **simulations, i
         perror("Error reading file version");
         return 0;
     }
-    // printf("File version: %f\n",ftemp[0]);
 
     // Second, read the number of runs
     if (!readints(1, itemp, pFile))
@@ -231,7 +226,6 @@ int read_simulation_data(const char *filename, SimulationStruct **simulations, i
         return 0;
     }
     n_simulations = itemp[0];
-    // printf("Number of runs: %d\n",n_simulations);
 
     // Allocate memory for the SimulationStruct array
     *simulations = (SimulationStruct *)malloc(sizeof(SimulationStruct) * n_simulations);
@@ -240,7 +234,6 @@ int read_simulation_data(const char *filename, SimulationStruct **simulations, i
         perror("Failed to malloc simulations.\n");
         return 0;
     }
-    //{printf("Failed to malloc simulations.\n");return 0;}
 
     tqdm pbar;
     for (i = 0; i < n_simulations; i++)
@@ -251,8 +244,6 @@ int read_simulation_data(const char *filename, SimulationStruct **simulations, i
         }
         // Store the input filename
         strcpy((*simulations)[i].inp_filename, filename);
-        // Echo the Filename
-        // printf("Input filename: %s\n",filename);
 
         // Store ignoreAdetection data
         (*simulations)[i].ignoreAdetection = ignoreAdetection;
@@ -276,12 +267,8 @@ int read_simulation_data(const char *filename, SimulationStruct **simulations, i
             if (ii > 0)
                 ii = ischar(str[0]);
         }
-        // Echo the Filename and AorB
-        // printf("Output filename: %s, AorB=%c\n",str,AorB);
         strcpy((*simulations)[i].outp_filename, str);
         (*simulations)[i].AorB = AorB;
-
-        // printf("begin=%d\n",(*simulations)[i].begin);
 
         // Read the number of photons
         ii = 0;
@@ -299,10 +286,7 @@ int read_simulation_data(const char *filename, SimulationStruct **simulations, i
                 perror("Error reading number of photons");
                 return 0;
             }
-            // if we reach EOF or read more number than defined something is wrong with the file!
-            // printf("ii=%d temp=%f %f %f %f %f\n",ii,temp[0],temp[1],temp[2],temp[3],temp[4]);
         }
-        // printf("Number of photons: %lu\n",number_of_photons);
         (*simulations)[i].number_of_photons = number_of_photons;
 
         // Read dr and dz (2x float)
@@ -311,7 +295,6 @@ int read_simulation_data(const char *filename, SimulationStruct **simulations, i
             perror("Error reading dr and dz");
             return 0;
         }
-        // printf("dz=%f, dr=%f\n",ftemp[0],ftemp[1]);
         (*simulations)[i].det.dz = ftemp[0];
         (*simulations)[i].det.dr = ftemp[1];
 
@@ -321,7 +304,6 @@ int read_simulation_data(const char *filename, SimulationStruct **simulations, i
             perror("Error reading No. of dz, dr and da");
             return 0;
         }
-        // printf("No. of dz=%d, dr=%d, da=%d\n",itemp[0],itemp[1],itemp[2]);
         (*simulations)[i].det.nz = itemp[0];
         (*simulations)[i].det.nr = itemp[1];
         (*simulations)[i].det.na = itemp[2];
@@ -332,7 +314,6 @@ int read_simulation_data(const char *filename, SimulationStruct **simulations, i
             perror("Error reading No. of layers");
             return 0;
         }
-        // printf("No. of layers=%d\n",itemp[0]);
         n_layers = itemp[0];
         (*simulations)[i].n_layers = itemp[0];
 
@@ -343,7 +324,6 @@ int read_simulation_data(const char *filename, SimulationStruct **simulations, i
             perror("Failed to malloc layers.\n");
             return 0;
         }
-        //{printf("Failed to malloc simulations.\n");return 0;}
 
         // Read upper refractive index (1xfloat)
         if (!readfloats(1, ftemp, pFile))
@@ -351,7 +331,6 @@ int read_simulation_data(const char *filename, SimulationStruct **simulations, i
             perror("Error reading upper refractive index");
             return 0;
         }
-        // printf("Upper refractive index=%f\n",ftemp[0]);
         (*simulations)[i].layers[0].n = ftemp[0];
 
         dtot = 0;
@@ -363,7 +342,6 @@ int read_simulation_data(const char *filename, SimulationStruct **simulations, i
                 perror("Error reading layer data");
                 return 0;
             }
-            // printf("n=%f, mua=%f, mus=%f, g=%f, d=%f\n",ftemp[0],ftemp[1],ftemp[2],ftemp[3],ftemp[4]);
             (*simulations)[i].layers[ii].n = ftemp[0];
             (*simulations)[i].layers[ii].mua = ftemp[1];
             (*simulations)[i].layers[ii].g = ftemp[3];
@@ -374,8 +352,6 @@ int read_simulation_data(const char *filename, SimulationStruct **simulations, i
                 (*simulations)[i].layers[ii].mutr = FLT_MAX; // Glas layer
             else
                 (*simulations)[i].layers[ii].mutr = 1.0f / (ftemp[1] + ftemp[2]);
-            // printf("mutr=%f\n",(*simulations)[i].layers[ii].mutr);
-            // printf("z_min=%f, z_max=%f\n",(*simulations)[i].layers[ii].z_min,(*simulations)[i].layers[ii].z_max);
         } // end ii<n_layers
 
         // Read lower refractive index (1xfloat)
@@ -384,11 +360,9 @@ int read_simulation_data(const char *filename, SimulationStruct **simulations, i
             perror("Error reading lower refractive index");
             return 0;
         }
-        // printf("Lower refractive index=%f\n",ftemp[0]);
         (*simulations)[i].layers[n_layers + 1].n = ftemp[0];
 
         (*simulations)[i].end = ftell(pFile);
-        // printf("end=%d\n",(*simulations)[i].end);
 
         // calculate start_weight
         n1 = (*simulations)[i].layers[0].n;

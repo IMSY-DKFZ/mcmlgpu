@@ -130,8 +130,6 @@ static void RunGPUi(HostThreadState *hstate) {
                                   DeviceMem.n_photons_left, sizeof(unsigned int),
                                   cudaMemcpyDeviceToHost));
 
-        // printf("[GPU %u] batch %5d, number of photons left %10u\n",
-        // hstate->dev_id, i, *(HostMem->n_photons_left));
     }
 
     // Sum the multiple copies of A_rz in the global memory.
@@ -148,8 +146,6 @@ static void RunGPUi(HostThreadState *hstate) {
         exit(1);
     }
 
-    // printf("[GPU %u] simulation done!\n", hstate->dev_id);
-
     CopyDeviceToHostMem(HostMem, &DeviceMem, hstate->sim, n_threads);
     FreeDeviceSimStates(&DeviceMem, &tstates);
     // We still need the host-side structure.
@@ -164,7 +160,6 @@ void DoOneSimulation(int sim_id, SimulationStruct *simulation,
                      UINT64 *x, UINT32 *a, const char *mcoFile, SimulationResults *simResults) {
     // Compute GPU-specific constant parameters.
     UINT32 A_rz_overflow = 0;
-    float elapsedTime = 0.;
     // We only need it if we care about A_rz.
 #if defined(CACHE_A_RZ_IN_SMEM) && defined(USE_32B_ELEM_FOR_ARZ_SMEM)
     if (! simulation->ignoreAdetection)
@@ -194,13 +189,6 @@ void DoOneSimulation(int sim_id, SimulationStruct *simulation,
                                  n_photons_per_GPU;
     }
 
-    cudaSetDevice(0);
-    cudaDeviceSynchronize();
-    int *devPtr;
-    size_t size = 10 * sizeof(int);
-
-    CUDA_SAFE_CALL(cudaMalloc(&devPtr, size));
-
     // Launch a dedicated host thread for each GPU.
     std::array<std::thread, MAX_GPU_COUNT> hthreads;
     for (UINT32 i = 0; i < num_GPUs; ++i) {
@@ -212,7 +200,6 @@ void DoOneSimulation(int sim_id, SimulationStruct *simulation,
         if (thread.joinable())
             thread.join();
     }
-
 
     // Check any of the threads failed.
     int failed = 0;
