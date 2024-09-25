@@ -12,3 +12,5 @@ cutil-linux
 executable
 *build*
 *.cast
+dist
+*.egg-info/

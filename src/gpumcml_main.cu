@@ -27,10 +27,10 @@
 
 #include <cuda_runtime.h>
 #include "gpumcml.h"
+#include "gpumcml_main.h"
 #include "gpumcml_kernel.h"
-
-#include "gpumcml_kernel.cu"
-#include "gpumcml_mem.cu"
+#include "gpumcml_mem.h"
+#include "gpumcml_rng.h"
 #include "../tqdm/tqdm.h"
 
 //////////////////////////////////////////////////////////////////////////////
@@ -41,6 +41,7 @@
 //   Each thread calls RunGPUi with its own HostThreadState parameters
 //////////////////////////////////////////////////////////////////////////////
 static void RunGPUi(HostThreadState *hstate) {
+    std::cout << "Starting GPUi" << std::endl;
     SimState *HostMem = &(hstate->host_sim_state);
     SimState DeviceMem;
     GPUThreadStates tstates;
@@ -105,7 +106,7 @@ static void RunGPUi(HostThreadState *hstate) {
     // This piece of shared memory is for overflow handling.
     k_smem_sz = NUM_THREADS_PER_BLOCK * sizeof(UINT32);
 #endif
-
+    std::cout << "About to start kernels" << std::endl;
     for (int i = 1; *HostMem->n_photons_left > 0; ++i) {
         // Run the kernel.
         if (hstate->sim->ignoreAdetection == 1) {
@@ -131,6 +132,7 @@ static void RunGPUi(HostThreadState *hstate) {
                                   cudaMemcpyDeviceToHost));
 
     }
+    std::cout << "Finished launching kernels" << std::endl;
 
     // Sum the multiple copies of A_rz in the global memory.
     sum_A_rz<<<30, 128>>>(DeviceMem.A_rz);
@@ -158,6 +160,7 @@ static void RunGPUi(HostThreadState *hstate) {
 void DoOneSimulation(int sim_id, SimulationStruct *simulation,
                      HostThreadState *hstates[], UINT32 num_GPUs,
                      UINT64 *x, UINT32 *a, const char *mcoFile, SimulationResults *simResults) {
+    std::cout << "Starting one simulation" << std::endl;
     // Compute GPU-specific constant parameters.
     UINT32 A_rz_overflow = 0;
     // We only need it if we care about A_rz.
@@ -189,17 +192,21 @@ void DoOneSimulation(int sim_id, SimulationStruct *simulation,
                                  n_photons_per_GPU;
     }
 
+    std::cout << "Initiated host memory" << std::endl;
+
     // Launch a dedicated host thread for each GPU.
     std::array<std::thread, MAX_GPU_COUNT> hthreads;
     for (UINT32 i = 0; i < num_GPUs; ++i) {
         hthreads[i] = std::thread(RunGPUi, hstates[i]);
     }
-
+    std::cout << "Launched computation thread" << std::endl;
     // Wait for all host threads to finish.
     for (auto &thread: hthreads) {
         if (thread.joinable())
             thread.join();
     }
+
+    std::cout << "Computation thread joined" << std::endl;
 
     // Check any of the threads failed.
     int failed = 0;
@@ -241,59 +248,40 @@ void DoOneSimulation(int sim_id, SimulationStruct *simulation,
     }
 }
 
+int RunSimulations(SimulationStruct *simulations, UINT32 num_GPUs, const char *mcoFileName, UINT64 seed, int
+n_simulations)
+{
+    std::cout << "Number of GPUs: " << num_GPUs << std::endl;
+    std::cout << "MCO File Name: " << (mcoFileName ? mcoFileName : "NULL") << std::endl;
+    std::cout << "Seed: " << seed << std::endl;
+    std::cout << "Number of Simulations: " << n_simulations << std::endl;
 
-//////////////////////////////////////////////////////////////////////////////
-//   Perform MCML simulation for one run out of N runs (in the input file)
-//////////////////////////////////////////////////////////////////////////////
-int main(int argc, char *argv[]) {
-    int result = interpret_arg(argc, argv);
-    if (result){
-        printf("Error parsing arguments");
-        return 1;
+    for (int i = 0; i < n_simulations; ++i) {
+        std::cout << "Simulation " << i + 1 << ":" << std::endl;
+        std::cout << "  - Input file: " << simulations[i].inp_filename << std::endl;
+        std::cout << "  - Output file: " << simulations[i].outp_filename << std::endl;
+        std::cout << "  - AorB: " << simulations[i].AorB << std::endl;
+        std::cout << "  - Number of photons: " << simulations[i].number_of_photons << std::endl;
+        std::cout << "  - start weight: " << simulations[i].start_weight << std::endl;
+        std::cout << "  - Ignore A detection: " << simulations[i].ignoreAdetection << std::endl;
+        std::cout << "  - nr: " << simulations[i].det.nr << std::endl;
+        std::cout << "  - nz: " << simulations[i].det.nz << std::endl;
+        std::cout << "  - na: " << simulations[i].det.na << std::endl;
+        std::cout << "  - dr: " << simulations[i].det.dr << std::endl;
+        std::cout << "  - dz: " << simulations[i].det.dz << std::endl;
+        for (int j = 0; j < simulations->n_layers + 2; j++)
+        {
+            std::cout << " - Layer " << j +1 << ":" << std::endl;
+            std::cout << "   - n:" << simulations[i].layers[j].n << std::endl;
+            std::cout << "   - mua:" << simulations[i].layers[j].mua << std::endl;
+            std::cout << "   - mutr:" << simulations[i].layers[j].mutr << std::endl;
+            std::cout << "   - zmax:" << simulations[i].layers[j].z_max << std::endl;
+            std::cout << "   - zmin:" << simulations[i].layers[j].z_min << std::endl;
+            std::cout << "   - g:" << simulations[i].layers[j].g << std::endl;
+        }
     }
-    const char *filename = g_commandLineArguments.input_file.c_str();
-    UINT64 seed = g_commandLineArguments.seed;
-    bool ignoreAdetection = g_commandLineArguments.ignore_absorption_detection;
-    const char *mcoFileName = g_commandLineArguments.output_file.c_str();
-    UINT32 num_GPUs = g_commandLineArguments.number_of_gpus;
     FILE *pFile_outp;
-
-    SimulationStruct *simulations;
-    int n_simulations;
     int i;
-
-    // Determine the number of GPUs available.
-    int dev_count;
-    CUDA_SAFE_CALL(cudaGetDeviceCount(&dev_count));
-    if (dev_count <= 0) {
-        fprintf(stderr, "No GPU available. Quit.\n");
-        return 1;
-    }
-
-    // Make sure we do not use more than what we have.
-    if (num_GPUs > dev_count) {
-        printf("The number of GPUs specified (%u) is more than "
-               "what is available (%d)!\n", num_GPUs, dev_count);
-        num_GPUs = (UINT32) dev_count;
-    }
-
-    // Output the execution configuration.
-    printf("\n====================================\n");
-    printf("EXECUTION MODE:\n");
-    printf("  ignore A-detection:      %s\n",
-           ignoreAdetection ? "YES" : "NO");
-    printf("  seed:                    %llu\n", seed);
-    printf("  # of GPUs:               %u\n", num_GPUs);
-    printf("====================================\n\n");
-
-    // Read the simulation inputs.
-    n_simulations = read_simulation_data(filename, &simulations,
-                                         ignoreAdetection);
-    if (n_simulations == 0) {
-        printf("Something wrong with read_simulation_data!\n");
-        return 1;
-    }
-    printf("Read %d simulations\n\n", n_simulations);
 
     // Allocate one host thread state for each GPU.
     HostThreadState *hstates[MAX_GPU_COUNT];
@@ -351,11 +339,14 @@ int main(int argc, char *argv[]) {
     fprintf(pFile_outp, "ID,Specular,Diffuse,Absorbed,Transmittance,Penetration\n");
     fclose(pFile_outp);
 
+    std::cout << "Initialized output file" << std::endl;
+
     SimulationResults simResults;
     //perform all the simulations
     tqdm pbar;
     for (i = 0; i < n_simulations; i++) {
       // Run a simulation
+      std::cout << "About to start one simulation" << std::endl;
       DoOneSimulation(i, &simulations[i], hstates, num_GPUs, x, a, mcoFileName,
                       &simResults);
       pbar.progress(i, n_simulations);
@@ -368,7 +359,62 @@ int main(int argc, char *argv[]) {
     free(x);
     free(a);
 
-    FreeSimulationStruct(simulations, n_simulations);
+    std::cout << "Finished MCML simulations" << std::endl;
 
+    return 0;
+}
+
+//////////////////////////////////////////////////////////////////////////////
+//   Perform MCML simulation for one run out of N runs (in the input file)
+//////////////////////////////////////////////////////////////////////////////
+int main(int argc, char *argv[]) {
+    int result = interpret_arg(argc, argv);
+    if (result){
+        printf("Error parsing arguments");
+        return 1;
+    }
+    const char *filename = g_commandLineArguments.input_file.c_str();
+    UINT64 seed = g_commandLineArguments.seed;
+    bool ignoreAdetection = g_commandLineArguments.ignore_absorption_detection;
+    const char *mcoFileName = g_commandLineArguments.output_file.c_str();
+    UINT32 num_GPUs = g_commandLineArguments.number_of_gpus;
+
+    SimulationStruct *simulations;
+    int n_simulations;
+
+    // Determine the number of GPUs available.
+    int dev_count;
+    CUDA_SAFE_CALL(cudaGetDeviceCount(&dev_count));
+    if (dev_count <= 0) {
+        fprintf(stderr, "No GPU available. Quit.\n");
+        return 1;
+    }
+
+    // Make sure we do not use more than what we have.
+    if (num_GPUs > dev_count) {
+        printf("The number of GPUs specified (%u) is more than "
+               "what is available (%d)!\n", num_GPUs, dev_count);
+        num_GPUs = (UINT32) dev_count;
+    }
+
+    // Output the execution configuration.
+    printf("\n====================================\n");
+    printf("EXECUTION MODE:\n");
+    printf("  ignore A-detection:      %s\n",
+           ignoreAdetection ? "YES" : "NO");
+    printf("  seed:                    %llu\n", seed);
+    printf("  # of GPUs:               %u\n", num_GPUs);
+    printf("====================================\n\n");
+
+    // Read the simulation inputs.
+    n_simulations = read_simulation_data(filename, &simulations,
+                                         ignoreAdetection);
+    if (n_simulations == 0) {
+        printf("Something wrong with read_simulation_data!\n");
+        return 1;
+    }
+    printf("Read %d simulations\n\n", n_simulations);
+    RunSimulations(simulations, num_GPUs, mcoFileName, seed, n_simulations);
+    FreeSimulationStruct(simulations, n_simulations);
     return 0;
 }

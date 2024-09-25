@@ -1,8 +1,10 @@
-cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.18 FATAL_ERROR)
 
 project(MCML LANGUAGES CXX CUDA VERSION 0.0.4)
 
-find_package(CUDA REQUIRED)
+enable_language(CUDA)
+set(PYBIND11_FINDPYTHON ON)
+find_package(pybind11 CONFIG REQUIRED)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_VERBOSE_MAKEFILE ON)
@@ -43,7 +45,20 @@ set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -O3 -DUNIX --use_fast_math -Xptxas -v 
 add_library(mcml_io STATIC src/gpumcml_io.cpp)
 
 # CUDA source files
-set(CUDA_SRCS src/gpumcml_main.cu)
+set(CUDA_SRCS src/gpumcml_main.cu src/gpumcml_kernel.cu src/gpumcml_mem.cu src/gpumcml_rng.cu)
+
+pybind11_add_module(mcmlgpu src/pybinding.cpp ${CUDA_SRCS} src/gpumcml_io.cpp)
+set_target_properties(
+    mcmlgpu
+    PROPERTIES
+    CUDA_SEPARABLE_COMPILATION ON
+    CUDA_ARCHITECTURES ${CUDA_ARCH}
+)
+if (NOT DEFINED SKBUILD_PROJECT_NAME OR SKBUILD_PROJECT_NAME STREQUAL "")
+    set(SKBUILD_PROJECT_NAME ".")
+endif()
+install(TARGETS mcmlgpu LIBRARY DESTINATION ${SKBUILD_PROJECT_NAME})
+install(FILES resources/safeprimes_base32.txt DESTINATION ${SKBUILD_PROJECT_NAME})
 
 # GPU executable
 add_executable(
