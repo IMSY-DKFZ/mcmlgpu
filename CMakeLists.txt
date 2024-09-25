@@ -3,8 +3,10 @@ cmake_minimum_required(VERSION 3.18 FATAL_ERROR)
 project(MCML LANGUAGES CXX CUDA VERSION 0.0.4)
 
 enable_language(CUDA)
-set(PYBIND11_FINDPYTHON ON)
-find_package(pybind11 CONFIG REQUIRED)
+#set(PYBIND11_FINDPYTHON ON)
+#find_package(pybind11 CONFIG REQUIRED)
+find_package(Python COMPONENTS Interpreter Development.Module REQUIRED)
+find_package(nanobind CONFIG REQUIRED)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_VERBOSE_MAKEFILE ON)
@@ -47,7 +49,8 @@ add_library(mcml_io STATIC src/gpumcml_io.cpp)
 # CUDA source files
 set(CUDA_SRCS src/gpumcml_main.cu src/gpumcml_kernel.cu src/gpumcml_mem.cu src/gpumcml_rng.cu)
 
-pybind11_add_module(mcmlgpu src/pybinding.cpp ${CUDA_SRCS} src/gpumcml_io.cpp)
+#pybind11_add_module(mcmlgpu src/pybinding.cpp ${CUDA_SRCS} src/gpumcml_io.cpp)
+nanobind_add_module(mcmlgpu src/pybinding.cpp ${CUDA_SRCS} src/gpumcml_io.cpp)
 set_target_properties(
     mcmlgpu
     PROPERTIES
