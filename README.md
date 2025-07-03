@@ -101,7 +101,7 @@ MCML_Bat_NA_0_Sim_0_3.02e-07.mco,0.02404,0.0299027,0.946057,0,0.998
 # Contributing a feature/bug fix
 If you have doubts on how to finish your feature branch, you can always ask for help
 
-1. Create an issue on `GitHub <https://github.com/IMSY-DKFZ/mcmlgpu/issues>`_, if a task does not exist yet.
+1. Create an issue on [GitHub](https://github.com/IMSY-DKFZ/mcmlgpu/issues), if a task does not exist yet.
 2. Assign the task to you.
 3. Create a fork of the repository.
 4. Create a new branch.
@@ -116,11 +116,15 @@ If you have doubts on how to finish your feature branch, you can always ask for 
 We also have a docker image that you can use for your projects. The image can be built by running the following command
 in a terminal. Make sure to have _Docker_ or _Docker compose_ installed on your computer. You can append the flag
 `--progress plain` to view more details about the progress.
+Keep in mind that to run this, you will have to have installed the [nvidia container toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html).
 
 ```bash
 docker build -t mcml:latest .
-docker run mcml:latest
+docker run --gpus all -v $(pwd)/resources:/data mcml:latest -i /data/sample.mci -O /data/batch.mco -A
 ```
+Notice that in the example above, the local folder called `resources` is being mounted as a volume in the docker image.
+After this finishes running then you can find the `.mco` output file in the output file that you indicated.
+Because the local folder was mounted as a volume, the output file can be found directly in your local folder.
 
 # Funding
 This project has received funding from the European Research Council (ERC) under the European Union’s Horizon 2020 research and innovation programme (grant agreement No. [101002198]).
