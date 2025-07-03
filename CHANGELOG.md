@@ -10,6 +10,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+-
+
+### Changed
+
+-
+
+### Removed
+
+-
+
+### Fixed
+
+-
+
+## [0.0.5]
+
+### Added
+
 - Adds Cpack to CMake to package .deb file
 - Adds citation file.
 - Adds GitHub actions, templates, etc.
@@ -19,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Improves information on how to build the application.
 - Integrates CLI11 as a argument parser.
+- Updated docker image to allow parsing any flags during runtime.
 
 ### Removed
 
