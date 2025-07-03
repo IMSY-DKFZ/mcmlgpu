@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
 
-project(MCML LANGUAGES CXX CUDA VERSION 0.0.4)
+project(MCML LANGUAGES CXX CUDA VERSION 0.0.5)
 
 find_package(CUDA REQUIRED)
 
