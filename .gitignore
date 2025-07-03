@@ -11,3 +11,4 @@
 cutil-linux
 executable
 *build*
+*.cast

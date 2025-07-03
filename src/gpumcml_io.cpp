@@ -28,59 +28,25 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
-#include <unistd.h>
 
 #include "../tqdm/tqdm.h"
+#include "CLI11.h"
 #include "gpumcml.h"
 
 using namespace std;
 
-//////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////
-
-//////////////////////////////////////////////////////////////////////////////
-//   Print Command Line Help - How to run program and pass in parameters
-//////////////////////////////////////////////////////////////////////////////
-void handleArgInterpretError()
-{
-    printf("\nFailed to interpret arguments, run MCML --help for more help");
-    printf("\n");
-    fflush(stdout);
-}
+struct CommandLineArguments g_commandLineArguments;
 
 //////////////////////////////////////////////////////////////////////////////
 //   Parse command line arguments
 //////////////////////////////////////////////////////////////////////////////
-int interpret_arg(int argc, char *argv[], char **fpath_p, unsigned long long *seed, int *ignoreAdetection,
-                  unsigned int *num_GPUs, char **mcoFile)
+int interpret_arg(int argc, char *argv[])
 {
-    int opt;
-
-    while ((opt = getopt(argc, argv, "i:AS:G:O:V")) != -1)
-    {
-        switch (opt)
-        {
-        case 'i': {
-            *fpath_p = optarg;
-            break;
-        }
-        case 'A': {
-            *ignoreAdetection = 1;
-            break;
-        }
-        case 'S': {
-            *seed = (unsigned long long)atoi(optarg);
-            break;
-        }
-        case 'G': {
-            *num_GPUs = (uint)atoi(optarg);
-            break;
-        }
-        case 'O': {
-            *mcoFile = optarg;
-            break;
-        }
-        case 'V': {
+    CLI::App app{"Monte Carlo Multi-Layer (MCML) accelerated by GPU"};
+    // add version callback
+    app.add_flag_callback(
+        "--version,-V",
+        [&] {
             std::cout << "Version: " << PROJECT_VERSION_MAJOR << "." << PROJECT_VERSION_MINOR << "."
                       << PROJECT_VERSION_PATCH << "\n"
                       << "Build details:"
@@ -91,25 +57,36 @@ int interpret_arg(int argc, char *argv[], char **fpath_p, unsigned long long *se
                       << "\tCompiler: " << CMAKE_CXX_COMPILER << "\n"
                       << "\tDate: " << BUILD_TIMESTAMP << "\n";
             exit(0);
-        }
-        default: { /* '?' */
-            fprintf(stderr,
-                    "\nUsage:\n"
-                    "%s \n"
-                    "[-i str] path to the .mci file that contains the tissue configuration\n"
-                    "[-A None] indicates that absorption detection should not be recorded. It can speed "
-                    "up simulations in some cases, but will not be able to calculate penetration depth.\n"
-                    "[-S int] seed\n"
-                    "[-G int] number of GPUs to use\n"
-                    "[-O str] Path to file where the output will be stored. Make sure that the parent "
-                    "folder already exists. The file name will be created on the parent folder.\n"
-                    "[-V None] Prints software version and build details",
-                    argv[0]);
-            exit(EXIT_FAILURE);
-        }
-        }
+        },
+        "Print the version information");
+    // add options to CLI
+    auto input_file = app.add_option("-i,--input", g_commandLineArguments.input_file,
+                                     "Path to the .mci file that contains the tissue configuration.");
+    input_file->required();
+    auto output_file = app.add_option("-O,--output", g_commandLineArguments.output_file,
+                                      "Path to file where the output will be stored. Make sure that the parent folder "
+                                      "already exists. The file name will be created on the parent folder.");
+    output_file->required();
+    app.add_option("-S,--seed", g_commandLineArguments.seed, "Seed.");
+    app.add_option("-G,--n_gpus", g_commandLineArguments.number_of_gpus, "Number of GPUs to use.");
+    app.add_flag("-A,--ignore_absorption", g_commandLineArguments.ignore_absorption_detection,
+                 "Indicates that absorption detection should not be recorded. It can speed up simulations in some "
+                 "cases, but will not be able to calculate penetration depth.");
+
+    try
+    {
+        app.parse(argc, argv);
     }
-    return (*fpath_p == NULL);
+    catch (const CLI::CallForHelp &e)
+    {
+        app.exit(e);
+        exit(0);
+    }
+    catch (const CLI::ParseError &e)
+    {
+        return app.exit(e);
+    }
+    return 0;
 }
 
 /***********************************************************
@@ -170,8 +147,6 @@ int readfloats(int n_floats, float *temp, FILE *pFile)
         ii = sscanf(mystring, "%f %f %f %f %f", &temp[0], &temp[1], &temp[2], &temp[3], &temp[4]);
         if (ii > n_floats)
             return 0;
-        // if we read more number than defined something is wrong with the file!
-        // printf("ii=%d temp=%f %f %f %f %f\n",ii,temp[0],temp[1],temp[2],temp[3],temp[4]);
     }
     return 1; // Everyting appears to be ok!
 }
@@ -197,8 +172,6 @@ int readints(int n_ints, int *temp, FILE *pFile) // replace with template?
         ii = sscanf(mystring, "%d %d %d %d %d", &temp[0], &temp[1], &temp[2], &temp[3], &temp[4]);
         if (ii > n_ints)
             return 0;
-        // if we read more number than defined something is wrong with the file!
-        // printf("ii=%d temp=%f %f %f %f %f\n",ii,temp[0],temp[1],temp[2],temp[3],temp[4]);
     }
     return 1; // Everyting appears to be ok!
 }
@@ -214,7 +187,7 @@ int ischar(char a)
 //////////////////////////////////////////////////////////////////////////////
 //   Parse simulation input file
 //////////////////////////////////////////////////////////////////////////////
-int read_simulation_data(char *filename, SimulationStruct **simulations, int ignoreAdetection)
+int read_simulation_data(const char *filename, SimulationStruct **simulations, int ignoreAdetection)
 {
     int i = 0;
     int ii = 0;
@@ -245,7 +218,6 @@ int read_simulation_data(char *filename, SimulationStruct **simulations, int ign
         perror("Error reading file version");
         return 0;
     }
-    // printf("File version: %f\n",ftemp[0]);
 
     // Second, read the number of runs
     if (!readints(1, itemp, pFile))
@@ -254,7 +226,6 @@ int read_simulation_data(char *filename, SimulationStruct **simulations, int ign
         return 0;
     }
     n_simulations = itemp[0];
-    // printf("Number of runs: %d\n",n_simulations);
 
     // Allocate memory for the SimulationStruct array
     *simulations = (SimulationStruct *)malloc(sizeof(SimulationStruct) * n_simulations);
@@ -263,7 +234,6 @@ int read_simulation_data(char *filename, SimulationStruct **simulations, int ign
         perror("Failed to malloc simulations.\n");
         return 0;
     }
-    //{printf("Failed to malloc simulations.\n");return 0;}
 
     tqdm pbar;
     for (i = 0; i < n_simulations; i++)
@@ -274,8 +244,6 @@ int read_simulation_data(char *filename, SimulationStruct **simulations, int ign
         }
         // Store the input filename
         strcpy((*simulations)[i].inp_filename, filename);
-        // Echo the Filename
-        // printf("Input filename: %s\n",filename);
 
         // Store ignoreAdetection data
         (*simulations)[i].ignoreAdetection = ignoreAdetection;
@@ -299,12 +267,8 @@ int read_simulation_data(char *filename, SimulationStruct **simulations, int ign
             if (ii > 0)
                 ii = ischar(str[0]);
         }
-        // Echo the Filename and AorB
-        // printf("Output filename: %s, AorB=%c\n",str,AorB);
         strcpy((*simulations)[i].outp_filename, str);
         (*simulations)[i].AorB = AorB;
-
-        // printf("begin=%d\n",(*simulations)[i].begin);
 
         // Read the number of photons
         ii = 0;
@@ -322,10 +286,7 @@ int read_simulation_data(char *filename, SimulationStruct **simulations, int ign
                 perror("Error reading number of photons");
                 return 0;
             }
-            // if we reach EOF or read more number than defined something is wrong with the file!
-            // printf("ii=%d temp=%f %f %f %f %f\n",ii,temp[0],temp[1],temp[2],temp[3],temp[4]);
         }
-        // printf("Number of photons: %lu\n",number_of_photons);
         (*simulations)[i].number_of_photons = number_of_photons;
 
         // Read dr and dz (2x float)
@@ -334,7 +295,6 @@ int read_simulation_data(char *filename, SimulationStruct **simulations, int ign
             perror("Error reading dr and dz");
             return 0;
         }
-        // printf("dz=%f, dr=%f\n",ftemp[0],ftemp[1]);
         (*simulations)[i].det.dz = ftemp[0];
         (*simulations)[i].det.dr = ftemp[1];
 
@@ -344,7 +304,6 @@ int read_simulation_data(char *filename, SimulationStruct **simulations, int ign
             perror("Error reading No. of dz, dr and da");
             return 0;
         }
-        // printf("No. of dz=%d, dr=%d, da=%d\n",itemp[0],itemp[1],itemp[2]);
         (*simulations)[i].det.nz = itemp[0];
         (*simulations)[i].det.nr = itemp[1];
         (*simulations)[i].det.na = itemp[2];
@@ -355,7 +314,6 @@ int read_simulation_data(char *filename, SimulationStruct **simulations, int ign
             perror("Error reading No. of layers");
             return 0;
         }
-        // printf("No. of layers=%d\n",itemp[0]);
         n_layers = itemp[0];
         (*simulations)[i].n_layers = itemp[0];
 
@@ -366,7 +324,6 @@ int read_simulation_data(char *filename, SimulationStruct **simulations, int ign
             perror("Failed to malloc layers.\n");
             return 0;
         }
-        //{printf("Failed to malloc simulations.\n");return 0;}
 
         // Read upper refractive index (1xfloat)
         if (!readfloats(1, ftemp, pFile))
@@ -374,7 +331,6 @@ int read_simulation_data(char *filename, SimulationStruct **simulations, int ign
             perror("Error reading upper refractive index");
             return 0;
         }
-        // printf("Upper refractive index=%f\n",ftemp[0]);
         (*simulations)[i].layers[0].n = ftemp[0];
 
         dtot = 0;
@@ -386,7 +342,6 @@ int read_simulation_data(char *filename, SimulationStruct **simulations, int ign
                 perror("Error reading layer data");
                 return 0;
             }
-            // printf("n=%f, mua=%f, mus=%f, g=%f, d=%f\n",ftemp[0],ftemp[1],ftemp[2],ftemp[3],ftemp[4]);
             (*simulations)[i].layers[ii].n = ftemp[0];
             (*simulations)[i].layers[ii].mua = ftemp[1];
             (*simulations)[i].layers[ii].g = ftemp[3];
@@ -397,8 +352,6 @@ int read_simulation_data(char *filename, SimulationStruct **simulations, int ign
                 (*simulations)[i].layers[ii].mutr = FLT_MAX; // Glas layer
             else
                 (*simulations)[i].layers[ii].mutr = 1.0f / (ftemp[1] + ftemp[2]);
-            // printf("mutr=%f\n",(*simulations)[i].layers[ii].mutr);
-            // printf("z_min=%f, z_max=%f\n",(*simulations)[i].layers[ii].z_min,(*simulations)[i].layers[ii].z_max);
         } // end ii<n_layers
 
         // Read lower refractive index (1xfloat)
@@ -407,11 +360,9 @@ int read_simulation_data(char *filename, SimulationStruct **simulations, int ign
             perror("Error reading lower refractive index");
             return 0;
         }
-        // printf("Lower refractive index=%f\n",ftemp[0]);
         (*simulations)[i].layers[n_layers + 1].n = ftemp[0];
 
         (*simulations)[i].end = ftell(pFile);
-        // printf("end=%d\n",(*simulations)[i].end);
 
         // calculate start_weight
         n1 = (*simulations)[i].layers[0].n;
@@ -505,7 +456,7 @@ void SimulationResults::registerSimulationResults(SimState *HostMem, SimulationS
     this->resultsStream << (double)A / scale1 << "," << (double)T / scale1 << "," << (double)penetrationDepth << "\n";
 }
 
-void SimulationResults::writeSimulationResults(char *mcoFile)
+void SimulationResults::writeSimulationResults(const char *mcoFile)
 {
     FILE *pFile_outp;
     pFile_outp = fopen(mcoFile, "a");

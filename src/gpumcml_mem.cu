@@ -221,39 +221,41 @@ void FreeHostSimState(SimState *hstate) {
 //   Free GPU Memory
 //////////////////////////////////////////////////////////////////////////////
 void FreeDeviceSimStates(SimState *dstate, GPUThreadStates *tstates) {
-    cudaFree(dstate->n_photons_left);
+    CUDA_SAFE_CALL_INFO(cudaFree(dstate->n_photons_left), "Error freeing memory");
     dstate->n_photons_left = NULL;
 
-    cudaFree(dstate->x);
+    CUDA_SAFE_CALL_INFO(cudaFree(dstate->x), "Error freeing memory");
     dstate->x = NULL;
-    cudaFree(dstate->a);
+    CUDA_SAFE_CALL_INFO(cudaFree(dstate->a), "Error freeing memory");
     dstate->a = NULL;
 
-    cudaFree(dstate->A_rz);
+    CUDA_SAFE_CALL_INFO(cudaFree(dstate->A_rz), "Error freeing memory");
     dstate->A_rz = NULL;
-    cudaFree(dstate->Rd_ra);
+    CUDA_SAFE_CALL_INFO(cudaFree(dstate->Rd_ra), "Error freeing memory");
     dstate->Rd_ra = NULL;
-    cudaFree(dstate->Tt_ra);
+    CUDA_SAFE_CALL_INFO(cudaFree(dstate->Tt_ra), "Error freeing memory");
     dstate->Tt_ra = NULL;
 
-    cudaFree(tstates->photon_x);
+    CUDA_SAFE_CALL_INFO(cudaFree(tstates->photon_x), "Error freeing memory");
     tstates->photon_x = NULL;
-    cudaFree(tstates->photon_y);
+    CUDA_SAFE_CALL_INFO(cudaFree(tstates->photon_y), "Error freeing memory");
     tstates->photon_y = NULL;
-    cudaFree(tstates->photon_z);
+    CUDA_SAFE_CALL_INFO(cudaFree(tstates->photon_z), "Error freeing memory");
     tstates->photon_z = NULL;
-    cudaFree(tstates->photon_ux);
+    CUDA_SAFE_CALL_INFO(cudaFree(tstates->photon_ux), "Error freeing memory");
     tstates->photon_ux = NULL;
-    cudaFree(tstates->photon_uy);
+    CUDA_SAFE_CALL_INFO(cudaFree(tstates->photon_uy), "Error freeing memory");
     tstates->photon_uy = NULL;
-    cudaFree(tstates->photon_uz);
+    CUDA_SAFE_CALL_INFO(cudaFree(tstates->photon_uz), "Error freeing memory");
     tstates->photon_uz = NULL;
-    cudaFree(tstates->photon_w);
+    CUDA_SAFE_CALL_INFO(cudaFree(tstates->photon_w), "Error freeing memory");
     tstates->photon_w = NULL;
-    cudaFree(tstates->photon_layer);
+    CUDA_SAFE_CALL_INFO(cudaFree(tstates->photon_layer), "Error freeing memory");
     tstates->photon_layer = NULL;
-    cudaFree(tstates->is_active);
+    CUDA_SAFE_CALL_INFO(cudaFree(tstates->is_active), "Error freeing memory");
     tstates->is_active = NULL;
+
+    CUDA_SAFE_CALL(cudaDeviceSynchronize());
 }
 
 //////////////////////////////////////////////////////////////////////////////

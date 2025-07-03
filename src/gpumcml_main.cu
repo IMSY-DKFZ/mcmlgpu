@@ -1,61 +1,9 @@
-/////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-//   GPU-based Monte Carlo simulation of photon migration in multi-layered media (GPU-MCML)
-//   Copyright (C) 2009
-//
-//   || DEVELOPMENT TEAM:
-//   --------------------------------------------------------------------------------------------------
-//   Erik Alerstam, David Han, and William C. Y. Lo
-//
-//   This code is the result of the collaborative efforts between
-//   Lund University and the University of Toronto.
-//
-//   || DOCUMENTATION AND USER MANUAL:
-//   --------------------------------------------------------------------------------------------------
-//	 Detailed "Wiki" style documentation is being developed for GPU-MCML
-//   and will be available on our webpage soon:
-//   http://code.google.com/p/gpumcml
-//
-//   || NEW FEATURES:
-//   --------------------------------------------------------------------------------------------------
-//    - Supports the Fermi GPU architecture
-//    - Multi-GPU execution
-//    - Automatic selection of optimization parameters
-//    - Backward compatible on pre-Fermi graphics cards
-//    - Supports linux and Windows environment (Visual Studio)
-//
-//   || PREVIOUS WORK:
-//   --------------------------------------------------------------------------------------------------
-//	 This code is the fusion of our earlier, preliminary implementations and combines the best features
-//   from each implementation.
-//
-//   W. C. Y. Lo, T. D. Han, J. Rose, and L. Lilge, "GPU-accelerated Monte Carlo simulation for photodynamic
-//   therapy treatment planning," in Proc. of SPIE-OSA Biomedical Optics, vol. 7373.
-//
-//   and
-//
-//   http://www.atomic.physics.lu.se/biophotonics/our_research/monte_carlo_simulations/gpu_monte_carlo/
-//	 E. Alerstam, T. Svensson and S. Andersson-Engels, "Parallel computing with graphics processing
-//	 units for high-speed Monte Carlo simulations of photon migration", Journal of Biomedical Optics
-//	 Letters, 13(6) 060504 (2008).
-//
-//   || CITATION:
-//   --------------------------------------------------------------------------------------------------
-//	 We encourage the use, and modification of this code, and hope it will help
-//	 users/programmers to utilize the power of GPGPU for their simulation needs. While we
-//	 don't have a scientific publication describing this code yet, we would very much appreciate it
-//	 if you cite our original papers above if you use this code or derivations
-//   thereof for your own scientific work
-//
-//	 To compile and run this code, please visit www.nvidia.com and download the necessary
-//	 CUDA Toolkit, SDK, and Developer Drivers
-//
-//	 If you use Visual Studio, the express edition is available for free at
-//   http://www.microsoft.com/express/Downloads/).
-//
-//   This code is distributed under the terms of the GNU General Public Licence (see below).
-//
-/////////////////////////////////////////////////////////////////////////////////////////////////////////
+/*****************************************************************************
+*
+*   Main control of MCMLGPU
+*   =========================================================================
+*
+****************************************************************************/
 /*
 *   This file is part of GPUMCML.
 *
@@ -182,8 +130,6 @@ static void RunGPUi(HostThreadState *hstate) {
                                   DeviceMem.n_photons_left, sizeof(unsigned int),
                                   cudaMemcpyDeviceToHost));
 
-        // printf("[GPU %u] batch %5d, number of photons left %10u\n",
-        // hstate->dev_id, i, *(HostMem->n_photons_left));
     }
 
     // Sum the multiple copies of A_rz in the global memory.
@@ -200,8 +146,6 @@ static void RunGPUi(HostThreadState *hstate) {
         exit(1);
     }
 
-    // printf("[GPU %u] simulation done!\n", hstate->dev_id);
-
     CopyDeviceToHostMem(HostMem, &DeviceMem, hstate->sim, n_threads);
     FreeDeviceSimStates(&DeviceMem, &tstates);
     // We still need the host-side structure.
@@ -212,11 +156,10 @@ static void RunGPUi(HostThreadState *hstate) {
 //   Perform MCML simulation for one run out of N runs (in the input file)
 //////////////////////////////////////////////////////////////////////////////
 void DoOneSimulation(int sim_id, SimulationStruct *simulation,
-                             HostThreadState *hstates[], UINT32 num_GPUs,
-                             UINT64 *x, UINT32 *a, char *mcoFile, SimulationResults *simResults) {
+                     HostThreadState *hstates[], UINT32 num_GPUs,
+                     UINT64 *x, UINT32 *a, const char *mcoFile, SimulationResults *simResults) {
     // Compute GPU-specific constant parameters.
     UINT32 A_rz_overflow = 0;
-    float elapsedTime = 0.;
     // We only need it if we care about A_rz.
 #if defined(CACHE_A_RZ_IN_SMEM) && defined(USE_32B_ELEM_FOR_ARZ_SMEM)
     if (! simulation->ignoreAdetection)
@@ -246,13 +189,6 @@ void DoOneSimulation(int sim_id, SimulationStruct *simulation,
                                  n_photons_per_GPU;
     }
 
-    cudaSetDevice(0);
-    cudaDeviceSynchronize();
-    int *devPtr;
-    size_t size = 10 * sizeof(int);
-
-    CUDA_SAFE_CALL(cudaMalloc(&devPtr, size));
-
     // Launch a dedicated host thread for each GPU.
     std::array<std::thread, MAX_GPU_COUNT> hthreads;
     for (UINT32 i = 0; i < num_GPUs; ++i) {
@@ -264,7 +200,6 @@ void DoOneSimulation(int sim_id, SimulationStruct *simulation,
         if (thread.joinable())
             thread.join();
     }
-
 
     // Check any of the threads failed.
     int failed = 0;
@@ -311,23 +246,21 @@ void DoOneSimulation(int sim_id, SimulationStruct *simulation,
 //   Perform MCML simulation for one run out of N runs (in the input file)
 //////////////////////////////////////////////////////////////////////////////
 int main(int argc, char *argv[]) {
-    char *filename = NULL;
-    UINT64 seed = (UINT64) time(NULL);
-    int ignoreAdetection = 0;
-    char *mcoFileName = NULL;
-    UINT32 num_GPUs = 1;
+    int result = interpret_arg(argc, argv);
+    if (result){
+        printf("Error parsing arguments");
+        return 1;
+    }
+    const char *filename = g_commandLineArguments.input_file.c_str();
+    UINT64 seed = g_commandLineArguments.seed;
+    bool ignoreAdetection = g_commandLineArguments.ignore_absorption_detection;
+    const char *mcoFileName = g_commandLineArguments.output_file.c_str();
+    UINT32 num_GPUs = g_commandLineArguments.number_of_gpus;
     FILE *pFile_outp;
 
     SimulationStruct *simulations;
     int n_simulations;
     int i;
-
-    // Parse command-line arguments.
-    if (interpret_arg(argc, argv, &filename,
-                      &seed, &ignoreAdetection, &num_GPUs, &mcoFileName)) {
-        handleArgInterpretError();
-        return 1;
-    }
 
     // Determine the number of GPUs available.
     int dev_count;

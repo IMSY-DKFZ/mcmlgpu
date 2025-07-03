@@ -1,3 +1,28 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:d11dca0a38afbc5d2e0ddeabc04a5226a4b419abf14258c545c1e5bff2166161
-size 764
+1.0 # file version
+2 # number of runs
+
+MCML_Bat_NA_0_Sim_0_3.00e-07.mco A # output filename, ASCII/Binary
+1000000 # No. of photons
+0.002 2 # dz, dr
+500 1 1 # No. of dz, dr & da.
+
+3 # No. of layers
+# n mua mus g d # One line for each layer
+1.0 # n for medium above.
+1.367 78.74051 850.66018 0.924 0.066
+1.476 81.73962 499.16883 0.869 0.108
+1.445 81.64664 687.70013 0.919 0.004
+1.0 # n for medium below.
+
+MCML_Bat_NA_0_Sim_0_3.02e-07.mco A # output filename, ASCII/Binary
+10000 # No. of photons
+0.002 2 # dz, dr
+500 1 1 # No. of dz, dr & da.
+
+3 # No. of layers
+# n mua mus g d # One line for each layer
+1.0 # n for medium above.
+1.367 74.94285 840.34489 0.924 0.066
+1.476 77.79732 494.76344 0.869 0.108
+1.445 77.70882 686.04920 0.919 0.004
+1.0 # n for medium below.

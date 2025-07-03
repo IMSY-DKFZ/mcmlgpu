@@ -1,16 +1,48 @@
-# Monte Carlo Multi Layer
+![Tests](https://github.com/IMSY-DKFZ/mcmlgpu/actions/workflows/build.yml/badge.svg?branch=develop)
+![Static Badge](https://img.shields.io/badge/releases%20-%20Semantic%20Versioning%20-%20green?logo=semver)
+![Language](https://img.shields.io/badge/Language%20-%20C%2B%2B11%20-%20green?logo=cplusplus)
+![Static Badge](https://img.shields.io/badge/Language%20-%20CUDA%20-%20green?logo=nvidia)
+![Static Badge](https://img.shields.io/badge/Pre%20Commit%20hooks%20-%20Enabled%20-%20?logo=precommit&color=pink)
+![Static Badge](https://img.shields.io/badge/Doc%20Style%20-%20Doxygen%20-%20?color=pink)
+![Static Badge](https://img.shields.io/badge/Code%20Style%20-%20Microsoft%20%20-%20?color=pink)
+![Static Badge](https://img.shields.io/badge/Application%20-%20CLI%20-%20green?logo=gnubash)
+![Static Badge](https://img.shields.io/badge/System%20-%20Linux%20-%20green?style=flat&logo=Ubuntu)
 
-This repository contains the base code for Monte Carlo simulations in GPU. Some custom implementations have been added
-to the original code developed by Erik Alerstam, David Han, and William C. Y. Lo: https://code.google.com/archive/p/gpumcml/.
+
+
+<p align="center">
+    <img src="resources/icon.png" alt="Logo" width="200"/>
+</p>
+
+# Monte Carlo Multi Layer accelerated by GPU
+
+This repository contains the base code for Monte Carlo simulations in a GPU of light transport on turbid media in GPU.
+Custom implementations have been added to the original code developed by
+[Erik Alerstam, David Han, and William C. Y. Lo](https://code.google.com/archive/p/gpumcml/).
+
+This project adds the following features:
+
+1. Modern build and install rules with CMake.
+2. Custom targeting of compute capabilities for modern GPUs through the flag `-DCUDA_ARCH`.
+3. Reduces IO operations thus increasing speed.
+4. New docker image.
+5. Easy install and uninstall mechanisms.
+6. Conan packaging enabled.
+7. Adds computation of penetration depth for each simulation at runtime.
+8. Modern code styling using pre-commit hooks.
+9. Progress bar display for simulations.
+10. Reduced terminal clutter.
+11. Eliminates dependency to deprecated `cutil` library.
+
+[![asciicast](https://asciinema.org/a/EIYfdZXnjKoDHhXUN1TooJAWK.svg)](https://asciinema.org/a/EIYfdZXnjKoDHhXUN1TooJAWK)
 
 # Setup development environment
-All you need to have is a CUDA capable computer, `cmake` and `git lfs`. You can set up these dependencies by running
+All you need to have is a `CUDA` capable computer and `cmake`. You can set up these dependencies by running
 the following commands from a terminal:
 
 ```bash
 sudo apt update
-sudo apt install cmake git-lfs
-git lfs pull # do this from the root directory of the repository
+sudo apt install cmake
 ```
 
 To develop a new feature you should create a new issue in [gitlab](https://git.dkfz.de/imsy/issi/mcmlgpu/-/issues). And
@@ -24,8 +56,6 @@ proceed to install the following dependencies:
 
 ```bash
 sudo apt install cmake git
-git lfs install
-git lfs pull
 ```
 
 After installing the dependencies, you can build MCML as follows.
@@ -53,12 +83,51 @@ of the repository.
 conan create . issi/stable-cuda11.5-sm86 -o cuda_arch=86
 ```
 
+# Running an example
+After building `MCML`, you can run an example to be sure that it is working as intended:
+
+```bash
+MCML -i resources/sample.mci -O batch.mco
+```
+
+This should create a file called `batch.mco` with the following content:
+
+```text
+ID,Specular,Diffuse,Absorbed,Transmittance,Penetration
+MCML_Bat_NA_0_Sim_0_3.00e-07.mco,0.02404,0.0277725,0.948185,0,0.998
+MCML_Bat_NA_0_Sim_0_3.02e-07.mco,0.02404,0.0299027,0.946057,0,0.998
+```
+
+# Contributing a feature/bug fix
+If you have doubts on how to finish your feature branch, you can always ask for help
+
+1. Create an issue on [GitHub](https://github.com/IMSY-DKFZ/mcmlgpu/issues), if a task does not exist yet.
+2. Assign the task to you.
+3. Create a fork of the repository.
+4. Create a new branch.
+   The `branch name` has to match the following pattern: `<issue-number>-<short_description_of_task>`
+5. Implement your feature
+6. Update :code:`feature` branch: :code:`git checkout <branch_name> && git merge develop`.
+7. Create a merge request for your feature.
+   select `develop` as the destination branch.
+8. The branch will be reviewed and automatically merged if there are no requested changes.
+
 # Docker image
 We also have a docker image that you can use for your projects. The image can be built by running the following command
 in a terminal. Make sure to have _Docker_ or _Docker compose_ installed on your computer. You can append the flag
 `--progress plain` to view more details about the progress.
+Keep in mind that to run this, you will have to have installed the [nvidia container toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html).
 
 ```bash
 docker build -t mcml:latest .
-docker run mcml:latest
+docker run --gpus all -v $(pwd)/resources:/data mcml:latest -i /data/sample.mci -O /data/batch.mco -A
 ```
+Notice that in the example above, the local folder called `resources` is being mounted as a volume in the docker image.
+After this finishes running then you can find the `.mco` output file in the output file that you indicated.
+Because the local folder was mounted as a volume, the output file can be found directly in your local folder.
+
+# Funding
+This project has received funding from the European Research Council (ERC) under the European Union’s Horizon 2020 research and innovation programme (grant agreement No. [101002198]).
+
+![ERC](resources/LOGO_ERC-FLAG_EU_.jpg)
+![DKFZ](resources/LOGO_DKFZ.png)

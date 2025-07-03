@@ -1,0 +1,26 @@
+name: Build, Test & Install
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [self-hosted]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - name: Checkout project
+      uses: actions/checkout@v4.1.7
+    - name: Build & install
+      run: |
+        docker build -t mcml:github .

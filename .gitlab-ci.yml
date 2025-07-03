@@ -13,6 +13,8 @@ build:
     - mkdir cmake-build && cd cmake-build
     - cmake ..
     - make MCML -j
+    - make package -j
+    - dpkg -i MCML*.deb
   artifacts:
     paths:
       - cmake-build/
